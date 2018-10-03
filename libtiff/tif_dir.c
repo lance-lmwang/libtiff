@@ -1564,12 +1564,12 @@ TIFFAdvanceDirectory(TIFF* tif, uint64* nextdir, uint64* off)
 /*
  * Count the number of directories in a file.
  */
-uint16
-TIFFNumberOfDirectories(TIFF* tif)
+uint64
+TIFFNumberOfDirectories64(TIFF* tif)
 {
-	static const char module[] = "TIFFNumberOfDirectories";
+	static const char module[] = "TIFFNumberOfDirectories64";
 	uint64 nextdir;
-	uint16 n;
+	uint64 n;
 	if (!(tif->tif_flags&TIFF_BIGTIFF))
 		nextdir = tif->tif_header.classic.tiff_diroff;
 	else
@@ -1577,18 +1577,34 @@ TIFFNumberOfDirectories(TIFF* tif)
 	n = 0;
 	while (nextdir != 0 && TIFFAdvanceDirectory(tif, &nextdir, NULL))
         {
-                if (n != 65535) {
+                if (n != 500000) {
                         ++n;
                 }
 		else
                 {
                         TIFFErrorExt(tif->tif_clientdata, module,
-                                     "Directory count exceeded 65535 limit,"
+                                     "Directory count exceeded 500000 limit,"
                                      " giving up on counting.");
-                        return (65535);
+                        return (500000);
                 }
         }
 	return (n);
+}
+
+uint16
+TIFFNumberOfDirectories(TIFF* tif)
+{
+    static const char module[] = "TIFFNumberOfDirectories";
+    uint64 n;
+
+    n = TIFFNumberOfDirectories64(tif);
+    if (n > 65535) {
+        TIFFErrorExt(tif->tif_clientdata, module,
+            "Directory count exceeded 65535 limit,"
+            " try using TIFFNumberOfDirectories64 for increased limit.");
+        return (65535);
+    }
+    return ((uint16)n);
 }
 
 /*
@@ -1596,10 +1612,10 @@ TIFFNumberOfDirectories(TIFF* tif)
  * NB: Directories are numbered starting at 0.
  */
 int
-TIFFSetDirectory(TIFF* tif, uint16 dirn)
+TIFFSetDirectory64(TIFF* tif, uint64 dirn)
 {
 	uint64 nextdir;
-	uint16 n;
+	uint64 n;
 
 	if (!(tif->tif_flags&TIFF_BIGTIFF))
 		nextdir = tif->tif_header.classic.tiff_diroff;
@@ -1621,6 +1637,12 @@ TIFFSetDirectory(TIFF* tif, uint16 dirn)
 	 */
 	tif->tif_dirnumber = 0;
 	return (TIFFReadDirectory(tif));
+}
+
+int
+TIFFSetDirectory(TIFF* tif, uint16 dirn)
+{
+    return TIFFSetDirectory64(tif, (uint64)dirn);
 }
 
 /*

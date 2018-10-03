@@ -123,7 +123,7 @@ TIFFClientOpen(
 	tif->tif_name = (char *)tif + sizeof (TIFF);
 	strcpy(tif->tif_name, name);
 	tif->tif_mode = m &~ (O_CREAT|O_TRUNC);
-	tif->tif_curdir = (uint16) -1;		/* non-existent directory */
+	tif->tif_curdir = (uint64) -1;		/* non-existent directory */
 	tif->tif_curoff = 0;
 	tif->tif_curstrip = (uint32) -1;	/* invalid strip */
 	tif->tif_row = (uint32) -1;		/* read/write pre-increment */
@@ -590,10 +590,23 @@ TIFFCurrentRow(TIFF* tif)
 /*
  * Return index of the current directory.
  */
+uint64
+TIFFCurrentDirectory64(TIFF* tif)
+{
+	return (tif->tif_curdir);
+}
+
 uint16
 TIFFCurrentDirectory(TIFF* tif)
 {
-	return (tif->tif_curdir);
+    static const char module[] = "TIFFCurrentDirectory";
+    if (tif->tif_curdir > 65535) {
+        TIFFErrorExt(tif->tif_clientdata, module,
+            "Directory count exceeded 65535 limit,"
+            " try using TIFFCurrentDirectory64 for increased limit.");
+        return (65535);
+    }
+    return ((uint16)tif->tif_curdir);
 }
 
 /*

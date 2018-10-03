@@ -4584,13 +4584,13 @@ MissingRequired(TIFF* tif, const char* tagname)
 static int
 TIFFCheckDirOffset(TIFF* tif, uint64 diroff)
 {
-	uint16 n;
+	uint64 n;
 
 	if (diroff == 0)			/* no more directories */
 		return 0;
-	if (tif->tif_dirnumber == 65535) {
+	if (tif->tif_dirnumber == (uint64) -1) {
 	    TIFFErrorExt(tif->tif_clientdata, "TIFFCheckDirOffset",
-			 "Cannot handle more than 65535 TIFF directories");
+			 "Cannot handle more than 2^64-1 of TIFF directories");
 	    return 0;
 	}
 
@@ -4612,8 +4612,8 @@ TIFFCheckDirOffset(TIFF* tif, uint64 diroff)
 		    tif->tif_dirnumber, 2 * sizeof(uint64), "for IFD list");
 		if (!new_dirlist)
 			return 0;
-		if( tif->tif_dirnumber >= 32768 )
-		    tif->tif_dirlistsize = 65535;
+		if( tif->tif_dirnumber >= ((uint64)-1)/2)
+		    tif->tif_dirlistsize = (uint64)-1;
 		else
 		    tif->tif_dirlistsize = 2 * tif->tif_dirnumber;
 		tif->tif_dirlist = new_dirlist;
