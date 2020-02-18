@@ -35,6 +35,7 @@ set(TESTSCRIPTS
     ppm2tiff_pbm.sh
     ppm2tiff_pgm.sh
     ppm2tiff_ppm.sh
+    fax2tiff.sh
     tiffcp-g3.sh
     tiffcp-g3-1d.sh
     tiffcp-g3-1d-fill.sh
@@ -104,7 +105,10 @@ set(TESTSCRIPTS
     tiff2rgba-palette-1c-8b.sh
     tiff2rgba-rgb-3c-16b.sh
     tiff2rgba-rgb-3c-8b.sh
-    tiff2rgba-quad-tile.jpg.sh)
+    tiff2rgba-quad-tile.jpg.sh
+    tiff2rgba-ojpeg_zackthecat_subsamp22_single_strip.sh
+    tiff2rgba-ojpeg_chewey_subsamp21_multi_strip.sh
+    tiff2rgba-ojpeg_single_strip_no_rowsperstrip.sh)
 
 # This list should contain all of the TIFF files in the 'images'
 # subdirectory which are intended to be used as input images for
@@ -122,7 +126,10 @@ set(TIFFIMAGES
     images/rgb-3c-8b.tiff
     images/quad-tile.jpg.tiff
     images/quad-lzw-compat.tiff
-    images/lzw-single-strip.tiff)
+    images/lzw-single-strip.tiff
+    images/ojpeg_zackthecat_subsamp22_single_strip.tiff
+    images/ojpeg_chewey_subsamp21_multi_strip.tiff
+    images/ojpeg_single_strip_no_rowsperstrip.tiff)
 
 set(BMPIMAGES
     images/palette-1c-8b.bmp
@@ -151,6 +158,7 @@ set(UNCOMPRESSEDIMAGES
 # files which are not currently used by the tests.
 set(IMAGES_EXTRA_DIST
     images/README.txt
+    images/miniswhite-1c-1b.g3
     ${BMPIMAGES}
     ${GIFIMAGES}
     ${PNMIMAGES}
@@ -185,6 +193,15 @@ endif()
 
 add_executable(custom_dir custom_dir.c)
 target_link_libraries(custom_dir tiff port)
+
+add_executable(defer_strile_loading defer_strile_loading.c)
+target_link_libraries(defer_strile_loading tiff port)
+
+add_executable(defer_strile_writing defer_strile_writing.c)
+target_link_libraries(defer_strile_writing tiff port)
+
+add_executable(testtypes testtypes.c)
+target_link_libraries(testtypes tiff port)
 
 set(TEST_OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/output")
 file(MAKE_DIRECTORY "${TEST_OUTPUT}")
@@ -383,3 +400,7 @@ add_convert_tests(tiffcrop  doubleflip "-F both"                  TIFFIMAGES TRU
 add_convert_tests(tiffcrop  extract    "-U px -E top -X 60 -Y 60" TIFFIMAGES TRUE)
 # Test extracting the first and fourth quarters from the left side.
 add_convert_tests(tiffcrop  extractz14 "-E left -Z1:4,2:4"        TIFFIMAGES TRUE)
+
+# test types
+add_test(NAME "testtypes"
+         COMMAND "testtypes")
