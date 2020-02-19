@@ -1582,7 +1582,7 @@ TIFFAdvanceDirectory(TIFF* tif, uint64* nextdir, uint64* off)
  * Count the number of directories in a file.
  */
 uint32
-TIFFNumberOfDirectories64(TIFF* tif)
+TIFFNumberOfDirectories32(TIFF* tif)
 {
 	static const char module[] = "TIFFNumberOfDirectories64";
 	uint64 nextdir;
@@ -1629,7 +1629,7 @@ TIFFNumberOfDirectories(TIFF* tif)
  * NB: Directories are numbered starting at 0.
  */
 int
-TIFFSetDirectory64(TIFF* tif, uint32 dirn)
+TIFFSetDirectory32(TIFF* tif, uint32 dirn)
 {
 	uint64 nextdir;
 	uint32 n;

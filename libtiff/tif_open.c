@@ -609,7 +609,7 @@ TIFFCurrentRow(TIFF* tif)
  * Return index of the current directory.
  */
 uint32
-TIFFCurrentDirectory64(TIFF* tif)
+TIFFCurrentDirectory32(TIFF* tif)
 {
 	return (tif->tif_curdir);
 }
