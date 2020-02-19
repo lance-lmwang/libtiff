@@ -1584,7 +1584,7 @@ TIFFAdvanceDirectory(TIFF* tif, uint64* nextdir, uint64* off)
 uint32
 TIFFNumberOfDirectories32(TIFF* tif)
 {
-	static const char module[] = "TIFFNumberOfDirectories64";
+	static const char module[] = "TIFFNumberOfDirectories32";
 	uint64 nextdir;
 	uint32 n;
 	if (!(tif->tif_flags&TIFF_BIGTIFF))
@@ -1614,11 +1614,11 @@ TIFFNumberOfDirectories(TIFF* tif)
     static const char module[] = "TIFFNumberOfDirectories";
     uint64 n;
 
-    n = TIFFNumberOfDirectories64(tif);
+    n = TIFFNumberOfDirectories32(tif);
     if (n > 65535) {
         TIFFErrorExt(tif->tif_clientdata, module,
             "Directory count exceeded 65535 limit,"
-            " try using TIFFNumberOfDirectories64 for increased limit.");
+            " try using TIFFNumberOfDirectories32 for increased limit.");
         return (65535);
     }
     return ((uint16)n);
@@ -1659,7 +1659,7 @@ TIFFSetDirectory32(TIFF* tif, uint32 dirn)
 int
 TIFFSetDirectory(TIFF* tif, uint16 dirn)
 {
-    return TIFFSetDirectory64(tif, (uint32)dirn);
+    return TIFFSetDirectory32(tif, (uint32)dirn);
 }
 
 /*

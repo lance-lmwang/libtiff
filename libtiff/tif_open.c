@@ -621,7 +621,7 @@ TIFFCurrentDirectory(TIFF* tif)
     if (tif->tif_curdir > 65535) {
         TIFFErrorExt(tif->tif_clientdata, module,
             "Directory count exceeded 65535 limit,"
-            " try using TIFFCurrentDirectory64 for increased limit.");
+            " try using TIFFCurrentDirectory32 for increased limit.");
         return (65535);
     }
     return ((uint16)tif->tif_curdir);
