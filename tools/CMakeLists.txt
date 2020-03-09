@@ -129,7 +129,9 @@ if(OPENGL_SUPPORT)
   target_sources(tiffgt PRIVATE tiffgt.c)
   target_link_libraries(tiffgt PRIVATE tiff tiff_port)
   target_link_libraries(tiffgt PRIVATE OpenGL::GL GLUT::GLUT)
-
+  if(WIN32)
+    target_link_libraries(tiffgt PRIVATE winmm)
+  endif()
   install(TARGETS tiffgt
           RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
 endif()
