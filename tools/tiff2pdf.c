@@ -4607,7 +4607,10 @@ void t2p_compose_pdf_page(T2P* t2p){
 				t2p->pdf_imagebox.x1 
 				+ ((float)(t2p->pdf_imagewidth * i * tilewidth)
 				/ (float)t2p->tiff_width);
-			boxp->x2 = t2p->pdf_imagebox.x2;
+			boxp->x2 =
+				t2p->pdf_imagebox.x1
+				+ ((float)(t2p->pdf_imagewidth * (i+1) * tilewidth)
+				/ (float)t2p->tiff_width);
 			boxp->y1 = 
 				t2p->pdf_imagebox.y2 
 				- ((float)(t2p->pdf_imagelength * (i2+1) * tilelength)
@@ -4839,7 +4842,7 @@ tsize_t t2p_write_pdf_page_content_stream(T2P* t2p, TIFF* output){
 		for(i=0;i<t2p->tiff_tiles[t2p->pdf_page].tiles_tilecount; i++){
 			box=t2p->tiff_tiles[t2p->pdf_page].tiles_tiles[i].tile_box;
 			buflen=snprintf(buffer, sizeof(buffer), 
-				"q %s %.4f %.4f %.4f %.4f %.4f %.4f cm /Im%d_%ld Do Q\n", 
+				"q %s%.4f %.4f %.4f %.4f %.4f %.4f cm /Im%d_%ld Do Q\n",
 				t2p->tiff_transferfunctioncount?"/GS1 gs ":"",
 				box.mat[0],
 				box.mat[1],
@@ -4900,13 +4903,8 @@ tsize_t t2p_write_pdf_xobject_stream_dict(ttile_t tile,
 	if(tile==0){
 		buflen=snprintf(buffer, sizeof(buffer), "%lu", (unsigned long)t2p->tiff_width);
 	} else {
-		if(t2p_tile_is_right_edge(t2p->tiff_tiles[t2p->pdf_page], tile-1)!=0){
-			buflen=snprintf(buffer, sizeof(buffer), "%lu",
-				(unsigned long)t2p->tiff_tiles[t2p->pdf_page].tiles_edgetilewidth);
-		} else {
 			buflen=snprintf(buffer, sizeof(buffer), "%lu",
 				(unsigned long)t2p->tiff_tiles[t2p->pdf_page].tiles_tilewidth);
-		}
 	}
 	check_snprintf_ret(t2p, buflen, buffer);
 	written += t2pWriteFile(output, (tdata_t) buffer, buflen);
