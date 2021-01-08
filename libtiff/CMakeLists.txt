@@ -32,11 +32,8 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/tiffconf.h.cmake.in
 
 extra_dist(
   SConstruct
-  tif_config.h-vms
   tif_config.vc.h
-  tif_config.wince.h
   tiffconf.vc.h
-  tiffconf.wince.h
   libtiff.def
   libtiff.map
   libtiffxx.map)
@@ -167,3 +164,12 @@ if(CXX_SUPPORT)
           DESTINATION "${CMAKE_INSTALL_FULL_INCLUDEDIR}")
 
 endif()
+
+add_executable(mkg3states mkg3states.c tif_fax3.h)
+target_link_libraries(mkg3states tiff port)
+
+add_custom_target(faxtable
+        DEPENDS mkg3states
+        COMMAND ${CMAKE_COMMAND} -E rm "tif_fax3sm.c"
+        COMMAND mkg3states -b -c const "tif_fax3sm.c"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")

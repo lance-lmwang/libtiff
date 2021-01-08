@@ -39,6 +39,17 @@
 #include "tiffiop.h"
 #include "tiffio.h"
 
+#ifndef EXIT_SUCCESS
+#define EXIT_SUCCESS 0
+#endif
+#ifndef EXIT_FAILURE
+#define EXIT_FAILURE 1
+#endif
+
+#ifndef HAVE_GETOPT
+extern int getopt(int argc, char * const argv[], const char *optstring);
+#endif
+
 #define	streq(a,b)	(strcmp(a,b) == 0)
 #define	CopyField(tag, v) \
     if (TIFFGetField(in, tag, &v)) TIFFSetField(out, tag, v)
@@ -89,17 +100,17 @@ main(int argc, char* argv[])
 			else if (streq(optarg, "zip"))
 			    compression = COMPRESSION_ADOBE_DEFLATE;
 			else
-			    usage(-1);
+			    usage(EXIT_FAILURE);
 			break;
 		case 'h':
 			horizSubSampling = atoi(optarg);
             if( horizSubSampling != 1 && horizSubSampling != 2 && horizSubSampling != 4 )
-                usage(-1);
+                usage(EXIT_FAILURE);
 			break;
 		case 'v':
 			vertSubSampling = atoi(optarg);
             if( vertSubSampling != 1 && vertSubSampling != 2 && vertSubSampling != 4 )
-                usage(-1);
+                usage(EXIT_FAILURE);
 			break;
 		case 'r':
 			rowsperstrip = atoi(optarg);
@@ -113,14 +124,14 @@ main(int argc, char* argv[])
 			refBlackWhite[5] = 240.;
 			break;
 		case '?':
-			usage(0);
+			usage(EXIT_FAILURE);
 			/*NOTREACHED*/
 		}
 	if (argc - optind < 2)
-		usage(-1);
+		usage(EXIT_FAILURE);
 	out = TIFFOpen(argv[argc-1], "w");
 	if (out == NULL)
-		return (-2);
+		return (EXIT_FAILURE);
 	setupLumaTables();
 	for (; optind < argc-1; optind++) {
 		in = TIFFOpen(argv[optind], "r");
@@ -137,7 +148,7 @@ main(int argc, char* argv[])
 		}
 	}
 	(void) TIFFClose(out);
-	return (0);
+	return (EXIT_SUCCESS);
 }
 
 float	*lumaRed;
@@ -357,32 +368,44 @@ tiffcvt(TIFF* in, TIFF* out)
         return result;
 }
 
-char* stuff[] = {
-    "usage: rgb2ycbcr [-c comp] [-r rows] [-h N] [-v N] input... output\n",
-    "where comp is one of the following compression algorithms:\n",
-    " jpeg\t\tJPEG encoding\n",
-    " lzw\t\tLempel-Ziv & Welch encoding\n",
-    " zip\t\tdeflate encoding\n",
-    " packbits\tPackBits encoding (default)\n",
-    " none\t\tno compression\n",
-    "and the other options are:\n",
-    " -r\trows/strip\n",
-    " -h\thorizontal sampling factor (1,2,4)\n",
-    " -v\tvertical sampling factor (1,2,4)\n",
-    NULL
+const char* usage_info[] = {
+/* Help information format modified for the sake of consistency with the other tiff tools */
+/*    "usage: rgb2ycbcr [-c comp] [-r rows] [-h N] [-v N] input... output\n", */
+/*     "where comp is one of the following compression algorithms:\n", */
+"usage: rgb2ycbcr [options] input output",
+"where options are:",
+#ifdef JPEG_SUPPORT
+" -c jpeg      JPEG encoding",
+#endif
+#ifdef ZIP_SUPPORT
+" -c zip       Zip/Deflate encoding",
+#endif
+#ifdef LZW_SUPPORT
+" -c lzw       Lempel-Ziv & Welch encoding",
+#endif
+#ifdef PACKBITS_SUPPORT
+" -c packbits  PackBits encoding (default)",
+#endif
+#if defined(JPEG_SUPPORT) || defined(LZW_SUPPORT) || defined(ZIP_SUPPORT) || defined(PACKBITS_SUPPORT)
+" -c none      no compression",
+#endif
+"",
+/*    "and the other options are:\n", */
+" -r   rows/strip",
+" -h   horizontal sampling factor (1,2,4)",
+" -v   vertical sampling factor (1,2,4)",
+NULL
 };
 
 static void
 usage(int code)
 {
-	char buf[BUFSIZ];
 	int i;
+	FILE * out = (code == EXIT_SUCCESS) ? stdout : stderr;
 
-	setbuf(stderr, buf);
-       
- fprintf(stderr, "%s\n\n", TIFFGetVersion());
-	for (i = 0; stuff[i] != NULL; i++)
-		fprintf(stderr, "%s\n", stuff[i]);
+	fprintf(out, "%s\n\n", TIFFGetVersion());
+	for (i = 0; usage_info[i] != NULL; i++)
+		fprintf(out, "%s\n", usage_info[i]);
 	exit(code);
 }
 

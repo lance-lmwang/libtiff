@@ -51,12 +51,15 @@
 
 #include "tiffio.h"
 
-#ifndef HAVE_GETOPT
-extern int getopt(int argc, char * const argv[], const char *optstring);
+#ifndef EXIT_SUCCESS
+#define EXIT_SUCCESS 0
+#endif
+#ifndef EXIT_FAILURE
+#define EXIT_FAILURE 1
 #endif
 
-#if defined(VMS)
-# define unlink delete
+#ifndef HAVE_GETOPT
+extern int getopt(int argc, char * const argv[], const char *optstring);
 #endif
 
 #define	streq(a,b)	(strcmp(a,b) == 0)
@@ -64,6 +67,12 @@ extern int getopt(int argc, char * const argv[], const char *optstring);
 
 #define	TRUE	1
 #define	FALSE	0
+
+#define DEFAULT_MAX_MALLOC (256 * 1024 * 1024)
+
+/* malloc size limit (in bytes)
+ * disabled when set to 0 */
+static tmsize_t maxMalloc = DEFAULT_MAX_MALLOC;
 
 static int outtiled = -1;
 static uint32 tilewidth;
@@ -84,15 +93,30 @@ static int jpegcolormode = JPEGCOLORMODE_RGB;
 static uint16 defcompression = (uint16) -1;
 static uint16 defpredictor = (uint16) -1;
 static int defpreset =  -1;
+static int subcodec = -1;
 
 static int tiffcp(TIFF*, TIFF*);
 static int processCompressOptions(char*);
-static void usage(void);
+static void usage(int code);
 
 static char comma = ',';  /* (default) comma separator character */
 static TIFF* bias = NULL;
 static int pageNum = 0;
 static int pageInSeq = 0;
+
+/**
+ * This custom malloc function enforce a maximum allocation size
+ */
+static void* limitMalloc(tmsize_t s)
+{
+	if (maxMalloc && (s > maxMalloc)) {
+		fprintf(stderr, "MemoryLimitError: allocation of " TIFF_UINT64_FORMAT " bytes is forbidden. Limit is " TIFF_UINT64_FORMAT ".\n",
+		        (uint64)s, (uint64)maxMalloc);
+		fprintf(stderr, "                  use -m option to change limit.\n");
+		return NULL;
+	}
+	return _TIFFmalloc(s);
+}
 
 static int nextSrcImage (TIFF *tif, char **imageSpec)
 /*
@@ -114,7 +138,7 @@ static int nextSrcImage (TIFF *tif, char **imageSpec)
 				fprintf (stderr,
 				    "Expected a %c separated image # list after %s\n",
 				    comma, TIFFFileName (tif));
-				exit (-4);   /* syntax error */
+				exit (EXIT_FAILURE);   /* syntax error */
 			}
 		}
 		if (TIFFSetDirectory (tif, nextImage)) return 1;
@@ -132,12 +156,14 @@ static TIFF* openSrcImage (char **imageSpec)
   no images specified, or a pointer to the next image number text
 */
 {
+	/* disable strip shopping when using jbig compression */
+	const char *mode = (defcompression == COMPRESSION_JBIG) ? "rc" : "r";
 	TIFF *tif;
 	char *fn = *imageSpec;
 	*imageSpec = strchr (fn, comma);
 	if (*imageSpec) {  /* there is at least one image number specifier */
 		**imageSpec = '\0';
-		tif = TIFFOpen (fn, "r");
+		tif = TIFFOpen (fn, mode);
 		/* but, ignore any single trailing comma */
 		if (!(*imageSpec)[1]) {*imageSpec = NULL; return tif;}
 		if (tif) {
@@ -148,7 +174,7 @@ static TIFF* openSrcImage (char **imageSpec)
 			}
 		}
 	}else
-		tif = TIFFOpen (fn, "r");
+		tif = TIFFOpen (fn, mode);
 	return tif;
 }
 
@@ -173,30 +199,33 @@ main(int argc, char* argv[])
 
 	*mp++ = 'w';
 	*mp = '\0';
-	while ((c = getopt(argc, argv, ",:b:c:f:l:o:p:r:w:aistBLMC8x")) != -1)
+	while ((c = getopt(argc, argv, "m:,:b:c:f:l:o:p:r:w:aistBLMC8xh")) != -1)
 		switch (c) {
+		case 'm':
+			maxMalloc = (tmsize_t)strtoul(optarg, NULL, 0) << 20;
+			break;
 		case ',':
-			if (optarg[0] != '=') usage();
+			if (optarg[0] != '=') usage(EXIT_FAILURE);
 			comma = optarg[1];
 			break;
 		case 'b':   /* this file is bias image subtracted from others */
 			if (bias) {
 				fputs ("Only 1 bias image may be specified\n", stderr);
-				exit (-2);
+				exit (EXIT_FAILURE);
 			}
 			{
 				uint16 samples = (uint16) -1;
 				char **biasFn = &optarg;
 				bias = openSrcImage (biasFn);
-				if (!bias) exit (-5);
+				if (!bias) exit (EXIT_FAILURE);
 				if (TIFFIsTiled (bias)) {
 					fputs ("Bias image must be organized in strips\n", stderr);
-					exit (-7);
+					exit (EXIT_FAILURE);
 				}
 				TIFFGetField(bias, TIFFTAG_SAMPLESPERPIXEL, &samples);
 				if (samples != 1) {
 					fputs ("Bias image must be monochrome\n", stderr);
-					exit (-7);
+					exit (EXIT_FAILURE);
 				}
 			}
 			break;
@@ -205,7 +234,7 @@ main(int argc, char* argv[])
 			break;
 		case 'c':   /* compression scheme */
 			if (!processCompressOptions(optarg))
-				usage();
+				usage(EXIT_FAILURE);
 			break;
 		case 'f':   /* fill order */
 			if (streq(optarg, "lsb2msb"))
@@ -213,7 +242,7 @@ main(int argc, char* argv[])
 			else if (streq(optarg, "msb2lsb"))
 				deffillorder = FILLORDER_MSB2LSB;
 			else
-				usage();
+				usage(EXIT_FAILURE);
 			break;
 		case 'i':   /* ignore errors */
 			ignore = TRUE;
@@ -231,7 +260,7 @@ main(int argc, char* argv[])
 			else if (streq(optarg, "contig"))
 				defconfig = PLANARCONFIG_CONTIG;
 			else
-				usage();
+				usage(EXIT_FAILURE);
 			break;
 		case 'r':   /* rows/strip */
 			defrowsperstrip = atol(optarg);
@@ -264,15 +293,18 @@ main(int argc, char* argv[])
 		case 'x':
 			pageInSeq = 1;
 			break;
+		case 'h':
+			usage(EXIT_SUCCESS);
+			/*NOTREACHED*/
 		case '?':
-			usage();
+			usage(EXIT_FAILURE);
 			/*NOTREACHED*/
 		}
 	if (argc - optind < 2)
-		usage();
+		usage(EXIT_FAILURE);
 	out = TIFFOpen(argv[argc-1], mode);
 	if (out == NULL)
-		return (-2);
+		return (EXIT_FAILURE);
 	if ((argc - optind) == 2)
 		pageNum = -1;
 	for (; optind < argc-1 ; optind++) {
@@ -280,14 +312,14 @@ main(int argc, char* argv[])
 		in = openSrcImage (&imageCursor);
 		if (in == NULL) {
 			(void) TIFFClose(out);
-			return (-3);
+			return (EXIT_FAILURE);
 		}
 		if (diroff != 0 && !TIFFSetSubDirectory(in, diroff)) {
 			TIFFError(TIFFFileName(in),
 			    "Error, setting subdirectory at " TIFF_UINT64_FORMAT, diroff);
 			(void) TIFFClose(in);
 			(void) TIFFClose(out);
-			return (1);
+			return (EXIT_FAILURE);
 		}
 		for (;;) {
 			config = defconfig;
@@ -302,7 +334,7 @@ main(int argc, char* argv[])
 			if (!tiffcp(in, out) || !TIFFWriteDirectory(out)) {
 				(void) TIFFClose(in);
 				(void) TIFFClose(out);
-				return (1);
+				return (EXIT_FAILURE);
 			}
 			if (imageCursor) { /* seek next image directory */
 				if (!nextSrcImage(in, &imageCursor)) break;
@@ -313,7 +345,7 @@ main(int argc, char* argv[])
 	}
 
 	(void) TIFFClose(out);
-	return (0);
+	return (EXIT_SUCCESS);
 }
 
 static void
@@ -326,8 +358,10 @@ processZIPOptions(char* cp)
 				defpredictor = atoi(cp);
 			else if (*cp == 'p')
 				defpreset = atoi(++cp);
+			else if (*cp == 's')
+				subcodec = atoi(++cp);
 			else
-				usage();
+				usage(EXIT_FAILURE);
 		} while( (cp = strchr(cp, ':')) );
 	}
 }
@@ -347,7 +381,7 @@ processG3Options(char* cp)
 			else if (strneq(cp, "fill", 4))
 				defg3opts |= GROUP3OPT_FILLBITS;
 			else
-				usage();
+				usage(EXIT_FAILURE);
 		} while( (cp = strchr(cp, ':')) );
 	}
 }
@@ -370,7 +404,7 @@ processCompressOptions(char* opt)
 			else if (cp[1] == 'r' )
 				jpegcolormode = JPEGCOLORMODE_RAW;
 			else
-				usage();
+				usage(EXIT_FAILURE);
 
 			cp = strchr(cp+1,':');
 		}
@@ -405,81 +439,113 @@ processCompressOptions(char* opt)
 	return (1);
 }
 
-char* stuff[] = {
-"usage: tiffcp [options] input... output",
-"where options are:",
-" -a              append to output instead of overwriting",
-" -o offset       set initial directory offset",
-" -p contig       pack samples contiguously (e.g. RGBRGB...)",
-" -p separate     store samples separately (e.g. RRR...GGG...BBB...)",
-" -s              write output in strips",
-" -t              write output in tiles",
-" -x              force the merged tiff pages in sequence",
-" -8              write BigTIFF instead of default ClassicTIFF",
-" -B              write big-endian instead of native byte order",
-" -L              write little-endian instead of native byte order",
-" -M              disable use of memory-mapped files",
-" -C              disable strip chopping",
-" -i              ignore read errors",
-" -b file[,#]     bias (dark) monochrome image to be subtracted from all others",
-" -,=%            use % rather than , to separate image #'s (per Note below)",
-"",
-" -r #            make each strip have no more than # rows",
-" -w #            set output tile width (pixels)",
-" -l #            set output tile length (pixels)",
-"",
-" -f lsb2msb      force lsb-to-msb FillOrder for output",
-" -f msb2lsb      force msb-to-lsb FillOrder for output",
-"",
-" -c lzw[:opts]   compress output with Lempel-Ziv & Welch encoding",
-" -c zip[:opts]   compress output with deflate encoding",
-" -c lzma[:opts]  compress output with LZMA2 encoding",
-" -c zstd[:opts]  compress output with ZSTD encoding",
-" -c webp[:opts]  compress output with WEBP encoding",
-" -c jpeg[:opts]  compress output with JPEG encoding",
-" -c jbig         compress output with ISO JBIG encoding",
-" -c packbits     compress output with packbits encoding",
-" -c g3[:opts]    compress output with CCITT Group 3 encoding",
-" -c g4           compress output with CCITT Group 4 encoding",
-" -c sgilog       compress output with SGILOG encoding",
-" -c none         use no compression algorithm on output",
-"",
-"Group 3 options:",
-" 1d              use default CCITT Group 3 1D-encoding",
-" 2d              use optional CCITT Group 3 2D-encoding",
-" fill            byte-align EOL codes",
-"For example, -c g3:2d:fill to get G3-2D-encoded data with byte-aligned EOLs",
-"",
-"JPEG options:",
-" #               set compression quality level (0-100, default 75)",
-" r               output color image as RGB rather than YCbCr",
-"For example, -c jpeg:r:50 to get JPEG-encoded RGB data with 50% comp. quality",
-"",
-"LZW, Deflate (ZIP), LZMA2, ZSTD and WEBP options:",
-" #               set predictor value",
-" p#              set compression level (preset)",
-"For example, -c lzw:2 to get LZW-encoded data with horizontal differencing,",
-"-c zip:3:p9 for Deflate encoding with maximum compression level and floating",
-"point predictor.",
-"",
-"Note that input filenames may be of the form filename,x,y,z",
-"where x, y, and z specify image numbers in the filename to copy.",
-"example:  tiffcp -c none -b esp.tif,1 esp.tif,0 test.tif",
-"  subtract 2nd image in esp.tif from 1st yielding uncompressed result test.tif",
-NULL
-};
+static const char usage_info[] =
+"usage: tiffcp [options] input... output\n"
+"where options are:\n"
+" -a              append to output instead of overwriting\n"
+" -o offset       set initial directory offset\n"
+" -p contig       pack samples contiguously (e.g. RGBRGB...)\n"
+" -p separate     store samples separately (e.g. RRR...GGG...BBB...)\n"
+" -s              write output in strips\n"
+" -t              write output in tiles\n"
+" -x              force the merged tiff pages in sequence\n"
+" -8              write BigTIFF instead of default ClassicTIFF\n"
+" -B              write big-endian instead of native byte order\n"
+" -L              write little-endian instead of native byte order\n"
+" -M              disable use of memory-mapped files\n"
+" -C              disable strip chopping\n"
+" -i              ignore read errors\n"
+" -b file[,#]     bias (dark) monochrome image to be subtracted from all others\n"
+" -,=%            use % rather than , to separate image #'s (per Note below)\n"
+" -m size         set maximum memory allocation size (MiB). 0 to disable limit.\n"
+"\n"
+" -r #            make each strip have no more than # rows\n"
+" -w #            set output tile width (pixels)\n"
+" -l #            set output tile length (pixels)\n"
+"\n"
+" -f lsb2msb      force lsb-to-msb FillOrder for output\n"
+" -f msb2lsb      force msb-to-lsb FillOrder for output\n"
+"\n"
+#ifdef LZW_SUPPORT
+" -c lzw[:opts]   compress output with Lempel-Ziv & Welch encoding\n"
+/* "    LZW options:" */
+"    #            set predictor value\n"
+"    p#           set compression level (preset)\n"
+"    For example, -c lzw:2 for LZW-encoded data with horizontal differencing\n"
+#endif
+#ifdef ZIP_SUPPORT
+" -c zip[:opts]   compress output with deflate encoding\n"
+/* "    Deflate (ZIP) options:", */
+"    #            set predictor value\n"
+"    p#           set compression level (preset)\n"
+"    For example, -c zip:3:p9 for maximum compression level and floating\n"
+"                 point predictor.\n"
+#endif
+#if defined(ZIP_SUPPORT) && defined(LIBDEFLATE_SUPPORT)
+"    s#           set subcodec: 0=zlib, 1=libdeflate (default 1)\n"
+/* "                 (only for Deflate/ZIP)", */
+#endif
+#ifdef LZMA_SUPPORT
+" -c lzma[:opts]  compress output with LZMA2 encoding\n"
+/* "    LZMA options:", */
+"    #            set predictor value\n"
+"    p#           set compression level (preset)\n"
+#endif
+#ifdef ZSTD_SUPPORT
+" -c zstd[:opts]  compress output with ZSTD encoding\n"
+/* "    ZSTD options:", */
+"    #            set predictor value\n"
+"    p#           set compression level (preset)\n"
+#endif
+#ifdef WEBP_SUPPORT
+" -c webp[:opts]  compress output with WEBP encoding\n"
+/* "    WEBP options:", */
+"    #            set predictor value\n"
+"    p#           set compression level (preset)\n"
+#endif
+#ifdef JPEG_SUPPORT
+" -c jpeg[:opts]  compress output with JPEG encoding\n"
+/* "    JPEG options:", */
+"    #            set compression quality level (0-100, default 75)\n"
+"    r            output color image as RGB rather than YCbCr\n"
+"    For example, -c jpeg:r:50 for JPEG-encoded RGB with 50% comp. quality\n"
+#endif
+#ifdef JBIG_SUPPORT
+" -c jbig         compress output with ISO JBIG encoding\n"
+#endif
+#ifdef PACKBITS_SUPPORT
+" -c packbits     compress output with packbits encoding\n"
+#endif
+#ifdef CCITT_SUPPORT
+" -c g3[:opts]    compress output with CCITT Group 3 encoding\n"
+/* "    CCITT Group 3 options:", */
+"    1d           use default CCITT Group 3 1D-encoding\n"
+"    2d           use optional CCITT Group 3 2D-encoding\n"
+"    fill         byte-align EOL codes\n"
+"    For example, -c g3:2d:fill for G3-2D-encoded data with byte-aligned EOLs\n"
+" -c g4           compress output with CCITT Group 4 encoding\n"
+#endif
+#ifdef LOGLUV_SUPPORT
+" -c sgilog       compress output with SGILOG encoding\n"
+#endif
+#if defined(LZW_SUPPORT) || defined(ZIP_SUPPORT) || defined(LZMA_SUPPORT) || defined(ZSTD_SUPPORT) || defined(WEBP_SUPPORT) || defined(JPEG_SUPPORT) || defined(JBIG_SUPPORT) || defined(PACKBITS_SUPPORT) || defined(CCITT_SUPPORT) || defined(LOGLUV_SUPPORT)
+" -c none         use no compression algorithm on output\n"
+#endif
+"\n"
+"Note that input filenames may be of the form filename,x,y,z\n"
+"where x, y, and z specify image numbers in the filename to copy.\n"
+"example: tiffcp -b esp.tif,1 esp.tif,0 test.tif\n"
+"    subtract 2nd image in esp.tif from 1st yielding result test.tif\n"
+;
 
 static void
-usage(void)
+usage(int code)
 {
-	char buf[BUFSIZ];
-	int i;
+	FILE * out = (code == EXIT_SUCCESS) ? stdout : stderr;
 
-	setbuf(stderr, buf);
-	fprintf(stderr, "%s\n\n", TIFFGetVersion());
-	for (i = 0; stuff[i] != NULL; i++)
-		fprintf(stderr, "%s\n", stuff[i]);
-	exit(-1);
+	fprintf(out, "%s\n\n", TIFFGetVersion());
+        fprintf(out, "%s", usage_info);
+	exit(code);
 }
 
 #define	CopyField(tag, v) \
@@ -546,7 +612,7 @@ cpTag(TIFF* in, TIFF* out, uint16 tag, uint16 count, TIFFDataType type)
 	}
 }
 
-static struct cpTag {
+static const struct cpTag {
 	uint16 tag;
 	uint16 count;
 	TIFFDataType type;
@@ -602,7 +668,7 @@ tiffcp(TIFF* in, TIFF* out)
 	uint16 input_compression, input_photometric = PHOTOMETRIC_MINISBLACK;
 	copyFunc cf;
 	uint32 width, length;
-	struct cpTag* p;
+	const struct cpTag* p;
 
 	CopyField(TIFFTAG_IMAGEWIDTH, width);
 	CopyField(TIFFTAG_IMAGELENGTH, length);
@@ -741,11 +807,23 @@ tiffcp(TIFF* in, TIFF* out)
 		case COMPRESSION_DEFLATE:
                 case COMPRESSION_LZMA:
                 case COMPRESSION_ZSTD:
-								case COMPRESSION_WEBP:
 			if (predictor != (uint16)-1)
 				TIFFSetField(out, TIFFTAG_PREDICTOR, predictor);
 			else
 				CopyField(TIFFTAG_PREDICTOR, predictor);
+                        if( compression == COMPRESSION_ADOBE_DEFLATE ||
+                            compression == COMPRESSION_DEFLATE )
+                        {
+                            if( subcodec != -1 )
+                            {
+                                if( TIFFSetField(out, TIFFTAG_DEFLATE_SUBCODEC, subcodec) != 1 )
+                                {
+                                    return FALSE;
+                                }
+                            }
+                        }
+			/*fallthrough*/
+		case COMPRESSION_WEBP:
 			if (preset != -1) {
                                 if (compression == COMPRESSION_ADOBE_DEFLATE
                                          || compression == COMPRESSION_DEFLATE)
@@ -858,7 +936,7 @@ DECLAREcpFunc(cpContig2ContigByRow)
 	tdata_t buf;
 	uint32 row;
 
-	buf = _TIFFmalloc(scanlinesize);
+	buf = limitMalloc(scanlinesize);
 	if (!buf)
 		return 0;
 	_TIFFmemset(buf, 0, scanlinesize);
@@ -932,8 +1010,8 @@ DECLAREcpFunc(cpBiasedContig2Contig)
 			subtractLine = lineSubtractFn (sampleBits);
 			if (subtractLine) {
 				uint32 row;
-				buf = _TIFFmalloc(bufSize);
-				biasBuf = _TIFFmalloc(bufSize);
+				buf = limitMalloc(bufSize);
+				biasBuf = limitMalloc(bufSize);
 				for (row = 0; row < imagelength; row++) {
 					if (TIFFReadScanline(in, buf, row, 0) < 0
 					    && !ignore) {
@@ -995,7 +1073,7 @@ bad:
 DECLAREcpFunc(cpDecodedStrips)
 {
 	tsize_t stripsize  = TIFFStripSize(in);
-	tdata_t buf = _TIFFmalloc(stripsize);
+	tdata_t buf = limitMalloc(stripsize);
 
 	(void) imagewidth; (void) spp;
 	if (buf) {
@@ -1045,7 +1123,7 @@ DECLAREcpFunc(cpSeparate2SeparateByRow)
 	tsample_t s;
 
 	(void) imagewidth;
-	buf = _TIFFmalloc(scanlinesize);
+	buf = limitMalloc(scanlinesize);
 	if (!buf)
 		return 0;
 	_TIFFmemset(buf, 0, scanlinesize);
@@ -1096,8 +1174,8 @@ DECLAREcpFunc(cpContig2SeparateByRow)
             return 0;
         }
 
-	inbuf = _TIFFmalloc(scanlinesizein);
-	outbuf = _TIFFmalloc(scanlinesizeout);
+	inbuf = limitMalloc(scanlinesizein);
+	outbuf = limitMalloc(scanlinesizeout);
 	if (!inbuf || !outbuf)
 		goto bad;
 	_TIFFmemset(inbuf, 0, scanlinesizein);
@@ -1159,8 +1237,8 @@ DECLAREcpFunc(cpSeparate2ContigByRow)
             return 0;
         }
 
-	inbuf = _TIFFmalloc(scanlinesizein);
-	outbuf = _TIFFmalloc(scanlinesizeout);
+	inbuf = limitMalloc(scanlinesizein);
+	outbuf = limitMalloc(scanlinesizeout);
 	if (!inbuf || !outbuf)
                 goto bad;
 	_TIFFmemset(inbuf, 0, scanlinesizein);
@@ -1266,7 +1344,7 @@ cpImage(TIFF* in, TIFF* out, readFunc fin, writeFunc fout,
 	if (scanlinesize
 	    && imagelength
 	    && bytes / (tsize_t)imagelength == scanlinesize) {
-		buf = _TIFFmalloc(bytes);
+		buf = limitMalloc(bytes);
 		if (buf) {
 			if ((*fin)(in, (uint8*)buf, imagelength,
 			    imagewidth, spp)) {
@@ -1314,7 +1392,7 @@ DECLAREreadFunc(readSeparateStripsIntoBuffer)
 	if (!scanlinesize)
 		return 0;
 
-	scanline = _TIFFmalloc(scanlinesize);
+	scanline = limitMalloc(scanlinesize);
 	if (!scanline)
 		return 0;
 	_TIFFmemset(scanline, 0, scanlinesize);
@@ -1363,7 +1441,7 @@ DECLAREreadFunc(readContigTilesIntoBuffer)
 	uint32 row;
 
 	(void) spp;
-	tilebuf = _TIFFmalloc(tilesize);
+	tilebuf = limitMalloc(tilesize);
 	if (tilebuf == 0)
 		return 0;
 	_TIFFmemset(tilebuf, 0, tilesize);
@@ -1417,13 +1495,13 @@ DECLAREreadFunc(readSeparateTilesIntoBuffer)
 	uint32 row;
 	uint16 bps = 0, bytes_per_sample;
 
-	if (spp > (INT_MAX / tilew))
+	if (tilew && spp > (INT_MAX / tilew))
 	{
 		TIFFError(TIFFFileName(in), "Error, cannot handle that much samples per tile row (Tile Width * Samples/Pixel)");
 		return 0;
 	}
 	iskew = imagew - tilew*spp;
-	tilebuf = _TIFFmalloc(tilesize);
+	tilebuf = limitMalloc(tilesize);
 	if (tilebuf == 0)
 		return 0;
 	_TIFFmemset(tilebuf, 0, tilesize);
@@ -1524,7 +1602,7 @@ DECLAREwriteFunc(writeBufferToSeparateStrips)
 	tstrip_t strip = 0;
 	tsample_t s;
 
-	obuf = _TIFFmalloc(stripsize);
+	obuf = limitMalloc(stripsize);
 	if (obuf == NULL)
 		return (0);
 	_TIFFmemset(obuf, 0, stripsize);
@@ -1566,7 +1644,7 @@ DECLAREwriteFunc(writeBufferToContigTiles)
 
 	(void) spp;
 
-	obuf = _TIFFmalloc(TIFFTileSize(out));
+	obuf = limitMalloc(TIFFTileSize(out));
 	if (obuf == NULL)
 		return 0;
 	_TIFFmemset(obuf, 0, tilesize);
@@ -1619,7 +1697,7 @@ DECLAREwriteFunc(writeBufferToSeparateTiles)
 	uint32 row;
 	uint16 bps = 0, bytes_per_sample;
 
-	obuf = _TIFFmalloc(TIFFTileSize(out));
+	obuf = limitMalloc(TIFFTileSize(out));
 	if (obuf == NULL)
 		return 0;
 	_TIFFmemset(obuf, 0, tilesize);

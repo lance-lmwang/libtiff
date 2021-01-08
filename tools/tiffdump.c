@@ -56,6 +56,13 @@ extern int getopt(int argc, char * const argv[], const char *optstring);
 
 #include "tiffio.h"
 
+#ifndef EXIT_SUCCESS
+#define EXIT_SUCCESS 0
+#endif
+#ifndef EXIT_FAILURE
+#define EXIT_FAILURE 1
+#endif
+
 #ifndef O_BINARY
 # define O_BINARY	0
 #endif
@@ -66,33 +73,39 @@ static union
 	TIFFHeaderBig big;
 	TIFFHeaderCommon common;
 } hdr;
-char* appname;
-char* curfile;
-int swabflag;
-int bigendian;
-int bigtiff;
-uint32 maxitems = 24;   /* maximum indirect data items to print */
+static char* appname;
+static char* curfile;
+static int swabflag;
+static int bigendian;
+static int bigtiff;
+static uint32 maxitems = 24;   /* maximum indirect data items to print */
 
-const char* bytefmt = "%s%#02x";	/* BYTE */
-const char* sbytefmt = "%s%d";		/* SBYTE */
-const char* shortfmt = "%s%u";		/* SHORT */
-const char* sshortfmt = "%s%d";		/* SSHORT */
-const char* longfmt = "%s%lu";		/* LONG */
-const char* slongfmt = "%s%ld";		/* SLONG */
-const char* ifdfmt = "%s%#04lx";	/* IFD offset */
+static const char bytefmt[] = "%s%#02x";	/* BYTE */
+static const char sbytefmt[] = "%s%d";		/* SBYTE */
+static const char shortfmtd[] = "%s%u";		/* SHORT */
+static const char shortfmth[] = "%s%#x";
+static const char sshortfmtd[] = "%s%d";	/* SSHORT */
+static const char sshortfmth[] = "%s%#x";
+static const char longfmtd[] = "%s%lu";		/* LONG */
+static const char longfmth[] = "%s%#lx";
+static const char slongfmtd[] = "%s%ld";	/* SLONG */
+static const char slongfmth[] = "%s%#lx";
+static const char ifdfmt[] = "%s%#04lx";	/* IFD offset */
 #if defined(__WIN32__) && (defined(_MSC_VER) || defined(__MINGW32__))
-const char* long8fmt = "%s%I64u";	/* LONG8 */
-const char* slong8fmt = "%s%I64d";	/* SLONG8 */
-const char* ifd8fmt = "%s%#08I64x";	/* IFD offset8*/
+static const char long8fmt[] = "%s%I64u";	/* LONG8 */
+static const char slong8fmt[] = "%s%I64d";	/* SLONG8 */
+static const char ifd8fmt[] = "%s%#08I64x";	/* IFD offset8*/
 #else
-const char* long8fmt = "%s%llu";	/* LONG8 */
-const char* slong8fmt = "%s%lld";	/* SLONG8 */
-const char* ifd8fmt = "%s%#08llx";	/* IFD offset8*/
+static const char long8fmt[] = "%s%llu";	/* LONG8 */
+static const char slong8fmt[] = "%s%lld";	/* SLONG8 */
+static const char ifd8fmt[] = "%s%#08llx";	/* IFD offset8 */
 #endif
-const char* rationalfmt = "%s%g";	/* RATIONAL */
-const char* srationalfmt = "%s%g";	/* SRATIONAL */
-const char* floatfmt = "%s%g";		/* FLOAT */
-const char* doublefmt = "%s%g";		/* DOUBLE */
+static const char rationalfmt[] = "%s%g";	/* RATIONAL */
+static const char srationalfmt[] = "%s%g";	/* SRATIONAL */
+static const char floatfmt[] = "%s%g";		/* FLOAT */
+static const char doublefmt[] = "%s%g";		/* DOUBLE */
+
+unsigned int hex_mode;
 
 static void dump(int, uint64);
 
@@ -105,7 +118,7 @@ void
 usage()
 {
 	fprintf(stderr, "usage: %s [-h] [-o offset] [-m maxitems] file.tif ...\n", appname);
-	exit(-1);
+	exit(EXIT_FAILURE);
 }
 
 int
@@ -115,16 +128,14 @@ main(int argc, char* argv[])
 	int multiplefiles = (argc > 1);
 	int c;
 	uint64 diroff = 0;
+        hex_mode=0;
 	bigendian = (*(char *)&one == 0);
 
 	appname = argv[0];
 	while ((c = getopt(argc, argv, "m:o:h")) != -1) {
 		switch (c) {
-		case 'h':			/* print values in hex */
-			shortfmt = "%s%#x";
-			sshortfmt = "%s%#x";
-			longfmt = "%s%#lx";
-			slongfmt = "%s%#lx";
+		case 'h':  /* print values in hex */
+                        hex_mode=1;
 			break;
 		case 'o':
 			diroff = (uint64) strtoul(optarg, NULL, 0);
@@ -142,7 +153,7 @@ main(int argc, char* argv[])
 		fd = open(argv[optind], O_RDONLY|O_BINARY, 0);
 		if (fd < 0) {
 			perror(argv[0]);
-			return (-1);
+			return (EXIT_FAILURE);
 		}
 		if (multiplefiles)
 			printf("%s:\n", argv[optind]);
@@ -152,7 +163,7 @@ main(int argc, char* argv[])
 		dump(fd, diroff);
 		close(fd);
 	}
-	return (0);
+	return (EXIT_SUCCESS);
 }
 
 #define ord(e) ((int)e)
@@ -451,7 +462,7 @@ ReadDirectory(int fd, unsigned int ix, uint64 off)
 			{
 				datafits = 0;
 				datamem = NULL;
-				dataoffset = *(uint64*)dp;
+				memcpy(&dataoffset, dp, sizeof(uint64));
 				if (swabflag)
 					TIFFSwabLong8(&dataoffset);
 			}
@@ -733,19 +744,19 @@ PrintData(FILE* fd, uint16 type, uint32 count, unsigned char* data)
 	case TIFF_SHORT: {
 		uint16 *wp = (uint16*)data;
 		while (count-- > 0)
-			fprintf(fd, shortfmt, sep, *wp++), sep = " ";
+			fprintf(fd, hex_mode ? shortfmth : shortfmtd, sep, *wp++), sep = " ";
 		break;
 	}
 	case TIFF_SSHORT: {
 		int16 *wp = (int16*)data;
 		while (count-- > 0)
-			fprintf(fd, sshortfmt, sep, *wp++), sep = " ";
+			fprintf(fd, hex_mode ? sshortfmth : sshortfmtd, sep, *wp++), sep = " ";
 		break;
 	}
 	case TIFF_LONG: {
 		uint32 *lp = (uint32*)data;
 		while (count-- > 0) {
-			fprintf(fd, longfmt, sep, (unsigned long) *lp++);
+			fprintf(fd, hex_mode ? longfmth : longfmtd, sep, (unsigned long) *lp++);
 			sep = " ";
 		}
 		break;
@@ -753,7 +764,7 @@ PrintData(FILE* fd, uint16 type, uint32 count, unsigned char* data)
 	case TIFF_SLONG: {
 		int32 *lp = (int32*)data;
 		while (count-- > 0)
-			fprintf(fd, slongfmt, sep, (long) *lp++), sep = " ";
+			fprintf(fd, hex_mode ? slongfmth : slongfmtd, sep, (long) *lp++), sep = " ";
 		break;
 	}
 	case TIFF_LONG8: {
@@ -762,7 +773,7 @@ PrintData(FILE* fd, uint16 type, uint32 count, unsigned char* data)
                         uint64 val;
                         memcpy(&val, llp, sizeof(uint64));
                         llp ++;
-			fprintf(fd, long8fmt, sep, val);
+			fprintf(fd, long8fmt, sep, (unsigned long long) val);
 			sep = " ";
 		}
 		break;
@@ -773,7 +784,7 @@ PrintData(FILE* fd, uint16 type, uint32 count, unsigned char* data)
                         int64 val;
                         memcpy(&val, llp, sizeof(int64));
                         llp ++;
-                        fprintf(fd, slong8fmt, sep, val);
+                        fprintf(fd, slong8fmt, sep, (long long) val);
                         sep = " ";
                 }
 		break;
@@ -874,7 +885,7 @@ Fatal(const char* fmt, ...)
 	va_start(ap, fmt);
 	vError(stderr, fmt, ap);
 	va_end(ap);
-	exit(-1);
+	exit(EXIT_FAILURE);
 }
 
 /* vim: set ts=8 sts=8 sw=8 noet: */

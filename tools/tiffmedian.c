@@ -54,6 +54,17 @@
 
 #include "tiffio.h"
 
+#ifndef EXIT_SUCCESS
+#define EXIT_SUCCESS 0
+#endif
+#ifndef EXIT_FAILURE
+#define EXIT_FAILURE 1
+#endif
+
+#ifndef HAVE_GETOPT
+extern int getopt(int argc, char * const argv[], const char *optstring);
+#endif
+
 #define	MAX_CMAP_SIZE	256
 
 #define	streq(a,b)	(strcmp(a,b) == 0)
@@ -83,20 +94,20 @@ typedef struct {
 	int	entries[MAX_CMAP_SIZE][2];
 } C_cell;
 
-uint16	rm[MAX_CMAP_SIZE], gm[MAX_CMAP_SIZE], bm[MAX_CMAP_SIZE];
-int	num_colors;
-uint32	histogram[B_LEN][B_LEN][B_LEN];
-Colorbox *freeboxes;
-Colorbox *usedboxes;
-C_cell	**ColorCells;
-TIFF	*in, *out;
-uint32	rowsperstrip = (uint32) -1;
-uint16	compression = (uint16) -1;
-uint16	bitspersample = 1;
-uint16	samplesperpixel;
-uint32	imagewidth;
-uint32	imagelength;
-uint16	predictor = 0;
+static uint16	rm[MAX_CMAP_SIZE], gm[MAX_CMAP_SIZE], bm[MAX_CMAP_SIZE];
+static int	num_colors;
+static uint32	histogram[B_LEN][B_LEN][B_LEN];
+static Colorbox *freeboxes;
+static Colorbox *usedboxes;
+static C_cell	**ColorCells;
+static TIFF	*in, *out;
+static uint32	rowsperstrip = (uint32) -1;
+static uint16	compression = (uint16) -1;
+static uint16	bitspersample = 1;
+static uint16	samplesperpixel;
+static uint32	imagewidth;
+static uint32	imagelength;
+static uint16	predictor = 0;
 
 static	void get_histogram(TIFF*, Colorbox*);
 static	void splitbox(Colorbox*);
@@ -106,7 +117,7 @@ static	void quant(TIFF*, TIFF*);
 static	void quant_fsdither(TIFF*, TIFF*);
 static	Colorbox* largest_box(void);
 
-static	void usage(void);
+static	void usage(int);
 static	int processCompressOptions(char*);
 
 #define	CopyField(tag, v) \
@@ -127,11 +138,11 @@ main(int argc, char* argv[])
 #endif
 
 	num_colors = MAX_CMAP_SIZE;
-	while ((c = getopt(argc, argv, "c:C:r:f")) != -1)
+	while ((c = getopt(argc, argv, "c:C:r:fh")) != -1)
 		switch (c) {
 		case 'c':		/* compression scheme */
 			if (!processCompressOptions(optarg))
-				usage();
+				usage(EXIT_FAILURE);
 			break;
 		case 'C':		/* set colormap size */
 			num_colors = atoi(optarg);
@@ -139,7 +150,7 @@ main(int argc, char* argv[])
 				fprintf(stderr,
 				   "-c: colormap too big, max %d\n",
 				   MAX_CMAP_SIZE);
-				usage();
+				usage(EXIT_FAILURE);
 			}
 			break;
 		case 'f':		/* dither */
@@ -148,15 +159,18 @@ main(int argc, char* argv[])
 		case 'r':		/* rows/strip */
 			rowsperstrip = atoi(optarg);
 			break;
+		case 'h':
+			usage(EXIT_SUCCESS);
+			/*NOTREACHED*/
 		case '?':
-			usage();
+			usage(EXIT_FAILURE);
 			/*NOTREACHED*/
 		}
 	if (argc - optind != 2)
-		usage();
+		usage(EXIT_FAILURE);
 	in = TIFFOpen(argv[optind], "r");
 	if (in == NULL)
-		return (-1);
+		return (EXIT_FAILURE);
 	TIFFGetField(in, TIFFTAG_IMAGEWIDTH, &imagewidth);
 	TIFFGetField(in, TIFFTAG_IMAGELENGTH, &imagelength);
 	TIFFGetField(in, TIFFTAG_BITSPERSAMPLE, &bitspersample);
@@ -164,18 +178,18 @@ main(int argc, char* argv[])
 	if (bitspersample != 8 && bitspersample != 16) {
 		fprintf(stderr, "%s: Image must have at least 8-bits/sample\n",
 		    argv[optind]);
-		return (-3);
+		return (EXIT_FAILURE);
 	}
 	if (!TIFFGetField(in, TIFFTAG_PHOTOMETRIC, &photometric) ||
 	    photometric != PHOTOMETRIC_RGB || samplesperpixel < 3) {
 		fprintf(stderr, "%s: Image must have RGB data\n", argv[optind]);
-		return (-4);
+		return (EXIT_FAILURE);
 	}
 	TIFFGetField(in, TIFFTAG_PLANARCONFIG, &config);
 	if (config != PLANARCONFIG_CONTIG) {
 		fprintf(stderr, "%s: Can only handle contiguous data packing\n",
 		    argv[optind]);
-		return (-5);
+		return (EXIT_FAILURE);
 	}
 
 	/*
@@ -245,7 +259,7 @@ main(int argc, char* argv[])
 	 */
 	out = TIFFOpen(argv[optind+1], "w");
 	if (out == NULL)
-		return (-2);
+		return (EXIT_FAILURE);
 
 	CopyField(TIFFTAG_SUBFILETYPE, longv);
 	CopyField(TIFFTAG_IMAGEWIDTH, longv);
@@ -290,7 +304,7 @@ main(int argc, char* argv[])
 	}
 	TIFFSetField(out, TIFFTAG_COLORMAP, rm, gm, bm);
 	(void) TIFFClose(out);
-	return (0);
+	return (EXIT_SUCCESS);
 }
 
 static int
@@ -315,34 +329,41 @@ processCompressOptions(char* opt)
 	return (1);
 }
 
-char* stuff[] = {
-"usage: tiffmedian [options] input.tif output.tif",
-"where options are:",
-" -r #		make each strip have no more than # rows",
-" -C #		create a colormap with # entries",
-" -f		use Floyd-Steinberg dithering",
-" -c lzw[:opts]	compress output with Lempel-Ziv & Welch encoding",
-" -c zip[:opts]	compress output with deflate encoding",
-" -c packbits	compress output with packbits encoding",
-" -c none	use no compression algorithm on output",
-"",
-"LZW and deflate options:",
-" #		set predictor value",
-"For example, -c lzw:2 to get LZW-encoded data with horizontal differencing",
-NULL
-};
+static const char usage_info[] =
+"usage: tiffmedian [options] input.tif output.tif\n"
+"where options are:\n"
+" -r #  make each strip have no more than # rows\n"
+" -C #  create a colormap with # entries\n"
+" -f    use Floyd-Steinberg dithering\n"
+"\n"
+#ifdef LZW_SUPPORT
+" -c lzw[:opts] compress output with Lempel-Ziv & Welch encoding\n"
+/* "    LZW options:" */
+"    #  set predictor value\n"
+"    For example, -c lzw:2 to get LZW-encoded data with horizontal differencing\n"
+#endif
+#ifdef ZIP_SUPPORT
+" -c zip[:opts] compress output with deflate encoding\n"
+/* "    Deflate (ZIP) options:" */
+"    #  set predictor value\n"
+#endif
+#ifdef PACKBITS_SUPPORT
+" -c packbits   compress output with packbits encoding\n"
+#endif
+#if defined(LZW_SUPPORT) || defined(ZIP_SUPPORT) || defined(PACKBITS_SUPPORT)
+" -c none       use no compression algorithm on output\n"
+#endif
+"\n"
+;
 
 static void
-usage(void)
+usage(int code)
 {
-	char buf[BUFSIZ];
-	int i;
+	FILE * out = (code == EXIT_SUCCESS) ? stdout : stderr;
 
-	setbuf(stderr, buf);
-        fprintf(stderr, "%s\n\n", TIFFGetVersion());
-	for (i = 0; stuff[i] != NULL; i++)
-		fprintf(stderr, "%s\n", stuff[i]);
-	exit(-1);
+        fprintf(out, "%s\n\n", TIFFGetVersion());
+        fprintf(out, "%s", usage_info);
+	exit(code);
 }
 
 static void
@@ -356,7 +377,7 @@ get_histogram(TIFF* in, Colorbox* box)
 	inputline = (unsigned char *)_TIFFmalloc(TIFFScanlineSize(in));
 	if (inputline == NULL) {
 		fprintf(stderr, "No space for scanline buffer\n");
-		exit(-1);
+		exit(EXIT_FAILURE);
 	}
 	box->rmin = box->gmin = box->bmin = 999;
 	box->rmax = box->gmax = box->bmax = -1;
@@ -378,7 +399,7 @@ get_histogram(TIFF* in, Colorbox* box)
                                 fprintf(stderr,
                                         "Logic error. "
                                         "Histogram array overflow!\n");
-                                exit(-6);
+                                exit(EXIT_FAILURE);
                         }
 			if (red < box->rmin)
 				box->rmin = red;

@@ -39,10 +39,21 @@
 
 #include "tiffio.h"
 
+#ifndef EXIT_SUCCESS
+#define EXIT_SUCCESS 0
+#endif
+#ifndef EXIT_FAILURE
+#define EXIT_FAILURE 1
+#endif
+
+#ifndef HAVE_GETOPT
+extern int getopt(int argc, char * const argv[], const char *optstring);
+#endif
+
 #define	streq(a,b)	(strcmp(a,b) == 0)
 #define	strneq(a,b,n)	(strncmp(a,b,n) == 0)
 
-static	void usage(void);
+static	void usage(int code);
 static	void cpTags(TIFF* in, TIFF* out);
 
 static int
@@ -85,14 +96,14 @@ main(int argc, char* argv[])
 	extern char* optarg;
 #endif
 
-	while ((c = getopt(argc, argv, "C:c:p:r:")) != -1)
+	while ((c = getopt(argc, argv, "C:c:p:r:h")) != -1)
 		switch (c) {
 		case 'C':		/* force colormap interpretation */
 			cmap = atoi(optarg);
 			break;
 		case 'c':		/* compression scheme */
 			if (!processCompressOptions(optarg))
-				usage();
+				usage(EXIT_FAILURE);
 			break;
 		case 'p':		/* planar configuration */
 			if (streq(optarg, "separate"))
@@ -100,33 +111,36 @@ main(int argc, char* argv[])
 			else if (streq(optarg, "contig"))
 				config = PLANARCONFIG_CONTIG;
 			else
-				usage();
+				usage(EXIT_FAILURE);
 			break;
 		case 'r':		/* rows/strip */
 			rowsperstrip = atoi(optarg);
 			break;
+		case 'h':
+			usage(EXIT_SUCCESS);
+			break;
 		case '?':
-			usage();
+			usage(EXIT_FAILURE);
 			/*NOTREACHED*/
 		}
 	if (argc - optind != 2)
-		usage();
+		usage(EXIT_FAILURE);
 	in = TIFFOpen(argv[optind], "r");
 	if (in == NULL)
-		return (-1);
+		return (EXIT_FAILURE);
 	if (!TIFFGetField(in, TIFFTAG_PHOTOMETRIC, &shortv) ||
 	    shortv != PHOTOMETRIC_PALETTE) {
 		fprintf(stderr, "%s: Expecting a palette image.\n",
 		    argv[optind]);
 		(void) TIFFClose(in);
-		return (-1);
+		return (EXIT_FAILURE);
 	}
 	if (!TIFFGetField(in, TIFFTAG_COLORMAP, &rmap, &gmap, &bmap)) {
 		fprintf(stderr,
 		    "%s: No colormap (not a valid palette image).\n",
 		    argv[optind]);
 		(void) TIFFClose(in);
-		return (-1);
+		return (EXIT_FAILURE);
 	}
 	bitspersample = 0;
 	TIFFGetField(in, TIFFTAG_BITSPERSAMPLE, &bitspersample);
@@ -134,12 +148,12 @@ main(int argc, char* argv[])
 		fprintf(stderr, "%s: Sorry, can only handle 8-bit images.\n",
 		    argv[optind]);
 		(void) TIFFClose(in);
-		return (-1);
+		return (EXIT_FAILURE);
 	}
 	out = TIFFOpen(argv[optind+1], "w");
 	if (out == NULL) {
 		(void) TIFFClose(in);
-		return (-2);
+		return (EXIT_FAILURE);
 	}
 	cpTags(in, out);
 	TIFFGetField(in, TIFFTAG_IMAGEWIDTH, &imagewidth);
@@ -198,7 +212,7 @@ main(int argc, char* argv[])
 		 * buffer overflow. Go ahead and fail now to prevent that.
 		 */
 		fprintf(stderr, "Could not determine correct image size for output. Exiting.\n");
-		return -1;
+		return EXIT_FAILURE;
       }
 	  ibuf = (unsigned char*)_TIFFmalloc(tss_in);
 	  obuf = (unsigned char*)_TIFFmalloc(tss_out);
@@ -242,7 +256,7 @@ main(int argc, char* argv[])
 done:
 	(void) TIFFClose(in);
 	(void) TIFFClose(out);
-	return (0);
+	return (EXIT_SUCCESS);
 }
 
 static int
@@ -263,7 +277,7 @@ processCompressOptions(char* opt)
                     else if (cp[1] == 'r' )
 			jpegcolormode = JPEGCOLORMODE_RAW;
                     else
-                        usage();
+                        usage(EXIT_FAILURE);
 
                     cp = strchr(cp+1,':');
                 }
@@ -351,7 +365,7 @@ cpTag(TIFF* in, TIFF* out, uint16 tag, uint16 count, TIFFDataType type)
 #undef CopyField2
 #undef CopyField
 
-static struct cpTag {
+static const struct cpTag {
     uint16	tag;
     uint16	count;
     TIFFDataType type;
@@ -405,7 +419,7 @@ static struct cpTag {
 static void
 cpTags(TIFF* in, TIFF* out)
 {
-    struct cpTag *p;
+    const struct cpTag *p;
     for (p = tags; p < &tags[NTAGS]; p++)
     {
         if( p->tag == TIFFTAG_GROUP3OPTIONS )
@@ -427,37 +441,42 @@ cpTags(TIFF* in, TIFF* out)
 }
 #undef NTAGS
 
-char* stuff[] = {
-"usage: pal2rgb [options] input.tif output.tif",
-"where options are:",
-" -p contig	pack samples contiguously (e.g. RGBRGB...)",
-" -p separate	store samples separately (e.g. RRR...GGG...BBB...)",
-" -r #		make each strip have no more than # rows",
-" -C 8		assume 8-bit colormap values (instead of 16-bit)",
-" -C 16		assume 16-bit colormap values",
-"",
-" -c lzw[:opts]	compress output with Lempel-Ziv & Welch encoding",
-" -c zip[:opts]	compress output with deflate encoding",
-" -c packbits	compress output with packbits encoding",
-" -c none	use no compression algorithm on output",
-"",
-"LZW and deflate options:",
-" #		set predictor value",
-"For example, -c lzw:2 to get LZW-encoded data with horizontal differencing",
-NULL
-};
+static const char usage_info[] =
+"usage: pal2rgb [options] input.tif output.tif\n"
+"where options are:\n"
+" -p contig	pack samples contiguously (e.g. RGBRGB...)\n"
+" -p separate	store samples separately (e.g. RRR...GGG...BBB...)\n"
+" -r #		make each strip have no more than # rows\n"
+" -C 8		assume 8-bit colormap values (instead of 16-bit)\n"
+" -C 16		assume 16-bit colormap values\n"
+"\n"
+#ifdef LZW_SUPPORT
+" -c lzw[:opts]	compress output with Lempel-Ziv & Welch encoding\n"
+/* "    LZW options:\n" */
+"    #  set predictor value\n"
+"    For example, -c lzw:2 to get LZW-encoded data with horizontal differencing\n"
+#endif
+#ifdef ZIP_SUPPORT
+" -c zip[:opts]	compress output with deflate encoding\n"
+/* "    Deflate (ZIP) options:\n" */
+"    #  set predictor value\n"
+#endif
+#ifdef PACKBITS_SUPPORT
+" -c packbits	compress output with packbits encoding\n"
+#endif
+#if defined(LZW_SUPPORT) || defined(ZIP_SUPPORT) || defined(PACKBITS_SUPPORT)
+" -c none	use no compression algorithm on output\n"
+#endif
+;
 
 static void
-usage(void)
+usage(int code)
 {
-	char buf[BUFSIZ];
-	int i;
+	FILE * out = (code == EXIT_SUCCESS) ? stdout : stderr;
 
-	setbuf(stderr, buf);
-        fprintf(stderr, "%s\n\n", TIFFGetVersion());
-	for (i = 0; stuff[i] != NULL; i++)
-		fprintf(stderr, "%s\n", stuff[i]);
-	exit(-1);
+        fprintf(out, "%s\n\n", TIFFGetVersion());
+        fprintf(out, "%s", usage_info);
+	exit(code);
 }
 
 /* vim: set ts=8 sts=8 sw=8 noet: */

@@ -40,13 +40,24 @@
 #include "tiffio.h"
 #include "tiffiop.h"
 
+#ifndef EXIT_SUCCESS
+#define EXIT_SUCCESS 0
+#endif
+#ifndef EXIT_FAILURE
+#define EXIT_FAILURE 1
+#endif
+
+#ifndef HAVE_GETOPT
+extern int getopt(int argc, char * const argv[], const char *optstring);
+#endif
+
 /* x% weighting -> fraction of full color */
 #define	PCT(x)	(((x)*256+50)/100)
 int	RED = PCT(30);		/* 30% */
 int	GREEN = PCT(59);	/* 59% */
 int	BLUE = PCT(11);		/* 11% */
 
-static	void usage(void);
+static	void usage(int code);
 static	int processCompressOptions(char*);
 
 static void
@@ -133,11 +144,11 @@ main(int argc, char* argv[])
         inbuf = (unsigned char *) NULL;
         outbuf = (unsigned char *) NULL;
 
-	while ((c = getopt(argc, argv, "c:r:R:G:B:")) != -1)
+	while ((c = getopt(argc, argv, "c:r:R:G:B:h")) != -1)
 		switch (c) {
 		case 'c':		/* compression scheme */
 			if (!processCompressOptions(optarg))
-				usage();
+				usage(EXIT_FAILURE);
 			break;
 		case 'r':		/* rows/strip */
 			rowsperstrip = atoi(optarg);
@@ -151,15 +162,17 @@ main(int argc, char* argv[])
 		case 'B':
 			BLUE = PCT(atoi(optarg));
 			break;
+		case 'h':
+			usage(EXIT_SUCCESS);
 		case '?':
-			usage();
+			usage(EXIT_FAILURE);
 			/*NOTREACHED*/
 		}
 	if (argc - optind < 2)
-		usage();
+		usage(EXIT_FAILURE);
 	in = TIFFOpen(argv[optind], "r");
 	if (in == NULL)
-		return (-1);
+		return (EXIT_FAILURE);
 	photometric = 0;
 	TIFFGetField(in, TIFFTAG_PHOTOMETRIC, &photometric);
 	if (photometric != PHOTOMETRIC_RGB && photometric != PHOTOMETRIC_PALETTE ) {
@@ -306,7 +319,7 @@ main(int argc, char* argv[])
                 _TIFFfree(outbuf);
         TIFFClose(in);
 	TIFFClose(out);
-	return (0);
+	return (EXIT_SUCCESS);
 
  tiff2bw_error:
         if (inbuf)
@@ -317,7 +330,7 @@ main(int argc, char* argv[])
                 TIFFClose(out);
         if (in)
                 TIFFClose(in);
-        return (-1);
+        return (EXIT_FAILURE);
 }
 
 static int
@@ -338,7 +351,7 @@ processCompressOptions(char* opt)
                     else if (cp[1] == 'r' )
 			jpegcolormode = JPEGCOLORMODE_RAW;
                     else
-                        usage();
+                        usage(EXIT_FAILURE);
 
                     cp = strchr(cp+1,':');
                 }
@@ -426,7 +439,7 @@ cpTag(TIFF* in, TIFF* out, uint16 tag, uint16 count, TIFFDataType type)
 #undef CopyField2
 #undef CopyField
 
-static struct cpTag {
+static const struct cpTag {
 	uint16	tag;
 	uint16	count;
 	TIFFDataType type;
@@ -470,7 +483,7 @@ static struct cpTag {
 static void
 cpTags(TIFF* in, TIFF* out)
 {
-    struct cpTag *p;
+    const struct cpTag *p;
     for (p = tags; p < &tags[NTAGS]; p++)
     {
         if( p->tag == TIFFTAG_GROUP3OPTIONS )
@@ -492,39 +505,47 @@ cpTags(TIFF* in, TIFF* out)
 }
 #undef NTAGS
 
-char* stuff[] = {
-"usage: tiff2bw [options] input.tif output.tif",
-"where options are:",
-" -R %		use #% from red channel",
-" -G %		use #% from green channel",
-" -B %		use #% from blue channel",
-"",
-" -r #		make each strip have no more than # rows",
-"",
-" -c lzw[:opts]	compress output with Lempel-Ziv & Welch encoding",
-" -c zip[:opts]	compress output with deflate encoding",
-" -c packbits	compress output with packbits encoding",
-" -c g3[:opts]	compress output with CCITT Group 3 encoding",
-" -c g4		compress output with CCITT Group 4 encoding",
-" -c none	use no compression algorithm on output",
-"",
-"LZW and deflate options:",
-" #		set predictor value",
-"For example, -c lzw:2 to get LZW-encoded data with horizontal differencing",
-NULL
-};
+static const char usage_info[] =
+"usage: tiff2bw [options] input.tif output.tif\n"
+"where options are:\n"
+" -R %		use #% from red channel\n"
+" -G %		use #% from green channel\n"
+" -B %		use #% from blue channel\n"
+"\n"
+" -r #		make each strip have no more than # rows\n"
+"\n"
+#ifdef LZW_SUPPORT
+" -c lzw[:opts]	compress output with Lempel-Ziv & Welch encoding\n"
+/* "    LZW options:\n" */
+"    #  set predictor value\n"
+"    For example, -c lzw:2 for LZW-encoded data with horizontal differencing\n"
+#endif
+#ifdef ZIP_SUPPORT
+" -c zip[:opts]	compress output with deflate encoding\n"
+/* "    Deflate (ZIP) options:\n" */
+"    #  set predictor value\n"
+#endif
+#ifdef PACKBITS_SUPPORT
+" -c packbits	compress output with packbits encoding\n"
+#endif
+#ifdef CCITT_SUPPORT
+" -c g3[:opts]	compress output with CCITT Group 3 encoding\n"
+" -c g4		compress output with CCITT Group 4 encoding\n"
+#endif
+#if defined(LZW_SUPPORT) || defined(ZIP_SUPPORT) || defined(PACKBITS_SUPPORT) || defined(CCITT_SUPPORT)
+" -c none	use no compression algorithm on output\n"
+#endif
+"\n"
+;
 
 static void
-usage(void)
+usage(int code)
 {
-	char buf[BUFSIZ];
-	int i;
+	FILE * out = (code == EXIT_SUCCESS) ? stdout : stderr;
 
-	setbuf(stderr, buf);
-        fprintf(stderr, "%s\n\n", TIFFGetVersion());
-	for (i = 0; stuff[i] != NULL; i++)
-		fprintf(stderr, "%s\n", stuff[i]);
-	exit(-1);
+        fprintf(out, "%s\n\n", TIFFGetVersion());
+        fprintf(out, "%s", usage_info);
+	exit(code);
 }
 
 /* vim: set ts=8 sts=8 sw=8 noet: */

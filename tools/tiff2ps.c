@@ -40,6 +40,13 @@
 
 #include "tiffio.h"
 
+#ifndef EXIT_SUCCESS
+#define EXIT_SUCCESS 0
+#endif
+#ifndef EXIT_FAILURE
+#define EXIT_FAILURE 1
+#endif
+
 /*
  * Revision history
  * 2013-Jan-21
@@ -57,7 +64,7 @@
  *    warning messages for incompatible command line options.
  *    Add new command line options to specify PageOrientation
  *    Document Structuring Comment for landscape or portrait
- *    and code to determine the values from ouput width and height
+ *    and code to determine the values from output width and height
  *    if not specified on the command line.
  *    Add new command line option to specify document creator
  *    as an alterntive to the string "tiff2ps" following model
@@ -78,7 +85,7 @@
  *
  *    Identified incompatible options and returned errors, eg
  *    -i for imagemask operator is only available for Level2 or
- *    Level3 Postscript in the current implmentation since there
+ *    Level3 Postscript in the current implementation since there
  *    is a difference in the way the operands are called for Level1
  *    and there is no function to provide the Level1 version.
  *    -H was not handled properly if -h and/or -w were specified.
@@ -89,7 +96,7 @@
  *    Conversion of TIFF to Postscript with optional rotations
  *    of 90, 180, 270, or auto degrees counterclockwise
  *    Conversion of TIFF to Postscript with entire image scaled
- *    to maximum of values spedified with -h or -w while
+ *    to maximum of values specified with -h or -w while
  *    maintaining aspect ratio. Same rotations apply.
  *    Conversion of TIFF to Postscript with clipping of output
  *    viewport to height specified with -H, producing multiple
@@ -174,6 +181,12 @@
 #define	FALSE	0
 #endif
 
+#define DEFAULT_MAX_MALLOC (256 * 1024 * 1024)
+
+/* malloc size limit (in bytes)
+ * disabled when set to 0 */
+static tmsize_t maxMalloc = DEFAULT_MAX_MALLOC;
+
 int	ascii85 = FALSE;		/* use ASCII85 encoding */
 int	interpolate = TRUE;		/* interpolate level2 image */
 int	level2 = FALSE;			/* generate PostScript level 2 */
@@ -234,6 +247,20 @@ tsize_t Ascii85EncodeBlock( uint8 * ascii85_p, unsigned f_eod, const uint8 * raw
 
 static	void usage(int);
 
+/**
+ * This custom malloc function enforce a maximum allocation size
+ */
+static void* limitMalloc(tmsize_t s)
+{
+	if (maxMalloc && (s > maxMalloc)) {
+		fprintf(stderr, "MemoryLimitError: allocation of " TIFF_UINT64_FORMAT " bytes is forbidden. Limit is " TIFF_UINT64_FORMAT ".\n",
+		        (uint64)s, (uint64)maxMalloc);
+		fprintf(stderr, "                  use -M option to change limit.\n");
+		return NULL;
+	}
+	return _TIFFmalloc(s);
+}
+
 int
 main(int argc, char* argv[])
 {
@@ -252,8 +279,11 @@ main(int argc, char* argv[])
 
         pageOrientation[0] = '\0';
 
-	while ((c = getopt(argc, argv, "b:d:h:H:W:L:i:w:l:o:O:P:C:r:t:acemxyzps1238DT")) != -1)
+	while ((c = getopt(argc, argv, "b:d:h:H:W:L:M:i:w:l:o:O:P:C:r:t:acemxyzps1238DT")) != -1)
 		switch (c) {
+		case 'M':
+			maxMalloc = (tmsize_t)strtoul(optarg, NULL, 0) << 20;
+			break;
 		case 'b':
 			bottommargin = atof(optarg);
 			break;
@@ -309,7 +339,7 @@ main(int argc, char* argv[])
                           case '9': diroff = (uint32) strtoul(optarg, NULL, 0);
 			          break;
                           default: TIFFError ("-o", "Offset must be a numeric value.");
-			    exit (1);
+			    exit (EXIT_FAILURE);
 			  }
 			break;
 		case 'O':		/* XXX too bad -o is already taken */
@@ -318,21 +348,21 @@ main(int argc, char* argv[])
 				fprintf(stderr,
 				    "%s: %s: Cannot open output file.\n",
 				    argv[0], optarg);
-				exit(-2);
+			    exit (EXIT_FAILURE);
 			}
 			break;
 		case 'P':
-                        switch (optarg[0])
-                          {
-                          case 'l':
-                          case 'L': strcpy (pageOrientation, "Landscape");
-			            break; 
-                          case 'p':
-                          case 'P': strcpy (pageOrientation, "Portrait");
-			            break; 
-                          default: TIFFError ("-P", "Page orientation must be Landscape or Portrait");
-			           exit (-1);
-			  }
+			switch (optarg[0])
+			{
+			  case 'l':
+			  case 'L': strcpy (pageOrientation, "Landscape");
+				break;
+			  case 'p':
+			  case 'P': strcpy (pageOrientation, "Portrait");
+				break;
+			  default: TIFFError ("-P", "Page orientation must be Landscape or Portrait");
+			    exit (EXIT_FAILURE);
+			}
 			break;
 		case 'l':
 			leftmargin = atof(optarg);
@@ -363,7 +393,7 @@ main(int argc, char* argv[])
 			    break;
 			  default:
                             fprintf (stderr, "Rotation angle must be 90, 180, 270 (degrees ccw) or auto\n");
-			    exit (-1);
+			    exit (EXIT_FAILURE);
 			  }
 			break;
 		case 's':
@@ -401,22 +431,22 @@ main(int argc, char* argv[])
 			res_unit = RESUNIT_INCH;
 			break;
 		case '?':
-			usage(-1);
+			usage(EXIT_FAILURE);
 		}
 
         if (useImagemask == TRUE)
           {
 	  if ((level2 == FALSE) && (level3 == FALSE))
             {
-	    TIFFError ("-m "," imagemask operator requres Postscript Level2 or Level3");
-	    exit (1);
+	    TIFFError ("-m "," imagemask operator requires Postscript Level2 or Level3");
+	    exit (EXIT_FAILURE);
             }
           }
 
         if (pageWidth && (maxPageWidth > pageWidth))
 	  {
 	  TIFFError ("-W", "Max viewport width cannot exceed page width");
-	  exit (1);
+	  exit (EXIT_FAILURE);
           }
 
         /* auto rotate requires a specified page width and height */
@@ -429,13 +459,13 @@ main(int argc, char* argv[])
           if ((maxPageWidth > 0) || (maxPageHeight > 0))
             {
 	    TIFFError ("-r auto", " is incompatible with maximum page width/height specified by -H or -W");
-            exit (1);
+            exit (EXIT_FAILURE);
             }
           }
         if ((maxPageWidth > 0) && (maxPageHeight > 0))
             {
 	    TIFFError ("-H and -W", " Use only one of -H or -W to define a viewport");
-            exit (1);
+            exit (EXIT_FAILURE);
             }
 
         if ((generateEPSF == TRUE) && (printAll == TRUE))
@@ -466,13 +496,13 @@ main(int argc, char* argv[])
                             && !TIFFSetDirectory(tif, (tdir_t)dirnum))
                         {
                                 TIFFClose(tif);
-				return (-1);
+				return (EXIT_FAILURE);
                         }
 			else if (diroff != 0 &&
 			    !TIFFSetSubDirectory(tif, diroff))
                         {
                                 TIFFClose(tif);
-				return (-1);
+				return (EXIT_FAILURE);
                         }
 			np = TIFF2PS(output, tif, pageWidth, pageHeight,
 				     leftmargin, bottommargin, centered);
@@ -486,10 +516,10 @@ main(int argc, char* argv[])
 	if (np)
 		PSTail(output, np);
 	else
-		usage(-1);
+		usage(EXIT_FAILURE);
 	if (output != stdout)
 		fclose(output);
-	return (0);
+	return (EXIT_SUCCESS);
 }
 
 static	uint16 samplesperpixel;
@@ -575,7 +605,7 @@ checkImage(TIFF* tif)
 #define PS_UNIT_SIZE	72.0F
 #define	PSUNITS(npix,res)	((npix) * (PS_UNIT_SIZE / (res)))
 
-static	char RGBcolorimage[] = "\
+static const char RGBcolorimage[] = "\
 /bwproc {\n\
     rgbproc\n\
     dup length 3 idiv string 0 3 0\n\
@@ -1282,19 +1312,19 @@ int psStart(FILE *fd, int npages, int auto_rotate, int *rotation, double *scale,
 
     if (((maxsource == pswidth) && (maxtarget != reqwidth)) ||
         ((maxsource == psheight) && (maxtarget != reqheight)))
-      {  /* optimal orientaion does not match input orientation */
+      {  /* optimal orientation does not match input orientation */
       *rotation = 90;
       xscale = (reqwidth - left_offset)/psheight;
       yscale = (reqheight - bottom_offset)/pswidth;
       }
-    else /* optimal orientaion matches input orientation */
+    else /* optimal orientation matches input orientation */
       {
       xscale = (reqwidth - left_offset)/pswidth;
       yscale = (reqheight - bottom_offset)/psheight;
       }
     *scale = (xscale < yscale) ? xscale : yscale;
 
-    /* Do not scale image beyound original size */
+    /* Do not scale image beyond original size */
     if (*scale > 1.0)
       *scale = 1.0;
 
@@ -1564,7 +1594,7 @@ int TIFF2PS(FILE* fd, TIFF* tif, double pgwidth, double pgheight, double lm, dou
            {
            if (pgwidth != 0 || pgheight != 0)
              {
-             /* User did not specify a maxium page height or width using -H or -W flag
+             /* User did not specify a maximum page height or width using -H or -W flag
               * but did use -h or -w flag to scale to a specific size page.
               */
              npages++;
@@ -1623,7 +1653,7 @@ int TIFF2PS(FILE* fd, TIFF* tif, double pgwidth, double pgheight, double lm, dou
 return(npages);
 }
 
-static char DuplexPreamble[] = "\
+static const char DuplexPreamble[] = "\
 %%BeginFeature: *Duplex True\n\
 systemdict begin\n\
   /languagelevel where { pop languagelevel } { 1 } ifelse\n\
@@ -1634,7 +1664,7 @@ end\n\
 %%EndFeature\n\
 ";
 
-static char TumblePreamble[] = "\
+static const char TumblePreamble[] = "\
 %%BeginFeature: *Tumble True\n\
 systemdict begin\n\
   /languagelevel where { pop languagelevel } { 1 } ifelse\n\
@@ -1645,7 +1675,7 @@ end\n\
 %%EndFeature\n\
 ";
 
-static char AvoidDeadZonePreamble[] = "\
+static const char AvoidDeadZonePreamble[] = "\
 gsave newpath clippath pathbbox grestore\n\
   4 2 roll 2 copy translate\n\
   exch 3 1 roll sub 3 1 roll sub exch\n\
@@ -1735,7 +1765,7 @@ PS_Lvl2colorspace(FILE* fd, TIFF* tif)
 
 	/*
 	 * Set up PostScript Level 2 colorspace according to
-	 * section 4.8 in the PostScript refenence manual.
+	 * section 4.8 in the PostScript reference manual.
 	 */
 	fputs("% PostScript Level 2 only.\n", fd);
 	if (photometric != PHOTOMETRIC_PALETTE) {
@@ -1897,7 +1927,7 @@ PS_Lvl2ImageDict(FILE* fd, TIFF* tif, uint32 w, uint32 h)
 			case COMPRESSION_CCITTFAX4:
 				/*
 				 * Manage inverting with /Blackis1 flag
-				 * since there migth be uncompressed parts
+				 * since there might be uncompressed parts
 				 */
 				fputs("  /Decode [0 1]\n", fd);
 				break;
@@ -2187,7 +2217,7 @@ PS_Lvl2page(FILE* fd, TIFF* tif, uint32 w, uint32 h)
 		else
 			chunk_size = TIFFStripSize(tif);
 	}
-	buf_data = (unsigned char *)_TIFFmalloc(chunk_size);
+	buf_data = (unsigned char *)limitMalloc(chunk_size);
 	if (!buf_data) {
 		TIFFError(filename, "Can't alloc %lu bytes for %s.",
 			(unsigned long) chunk_size, tiled_image ? "tiles" : "strips");
@@ -2205,7 +2235,7 @@ PS_Lvl2page(FILE* fd, TIFF* tif, uint32 w, uint32 h)
 	     * 5*chunk_size/4.
 	     */
 
-	    ascii85_p = _TIFFmalloc( (chunk_size+(chunk_size/2)) + 8 );
+	    ascii85_p = limitMalloc( (chunk_size+(chunk_size/2)) + 8 );
 
 	    if ( !ascii85_p ) {
 		_TIFFfree( buf_data );
@@ -2449,7 +2479,7 @@ PSDataColorContig(FILE* fd, TIFF* tif, uint32 w, uint32 h, int nc)
             TIFFError(filename, "Inconsistent value of es: %d (samplesperpixel=%u, nc=%d)", es, samplesperpixel, nc);
             return;
         }
-	tf_buf = (unsigned char *) _TIFFmalloc(tf_bytesperrow);
+	tf_buf = (unsigned char *) limitMalloc(tf_bytesperrow);
 	if (tf_buf == NULL) {
 		TIFFError(filename, "No space for scanline buffer");
 		return;
@@ -2517,7 +2547,7 @@ PSDataColorSeparate(FILE* fd, TIFF* tif, uint32 w, uint32 h, int nc)
 	unsigned char *cp, c;
 
 	(void) w;
-	tf_buf = (unsigned char *) _TIFFmalloc(tf_bytesperrow);
+	tf_buf = (unsigned char *) limitMalloc(tf_bytesperrow);
 	if (tf_buf == NULL) {
 		TIFFError(filename, "No space for scanline buffer");
 		return;
@@ -2563,7 +2593,7 @@ PSDataPalette(FILE* fd, TIFF* tif, uint32 w, uint32 h)
 		return;
 	}
 	nc = 3 * (8 / bitspersample);
-	tf_buf = (unsigned char *) _TIFFmalloc(tf_bytesperrow);
+	tf_buf = (unsigned char *) limitMalloc(tf_bytesperrow);
 	if (tf_buf == NULL) {
 		TIFFError(filename, "No space for scanline buffer");
 		return;
@@ -2628,7 +2658,7 @@ PSDataBW(FILE* fd, TIFF* tif, uint32 w, uint32 h)
 #endif
 
 	(void) w; (void) h;
-	tf_buf = (unsigned char *) _TIFFmalloc(stripsize);
+	tf_buf = (unsigned char *) limitMalloc(stripsize);
 	if (tf_buf == NULL) {
 		TIFFError(filename, "No space for scanline buffer");
 		return;
@@ -2648,7 +2678,7 @@ PSDataBW(FILE* fd, TIFF* tif, uint32 w, uint32 h)
 	     * 5*stripsize/4.
 	     */
 
-	    ascii85_p = _TIFFmalloc( (stripsize+(stripsize/2)) + 8 );
+	    ascii85_p = limitMalloc( (stripsize+(stripsize/2)) + 8 );
 
 	    if ( !ascii85_p ) {
 		_TIFFfree( tf_buf );
@@ -2685,7 +2715,7 @@ PSDataBW(FILE* fd, TIFF* tif, uint32 w, uint32 h)
 #if defined( EXP_ASCII85ENCODER )
 			if (alpha) {
 				int adjust, i;
-				for (i = 0; i < cc; i+=2) {
+				for (i = 0; i < (cc - 1); i+=2) {
 					adjust = 255 - cp[i + 1];
 				    cp[i / 2] = cp[i] + adjust;
 				}
@@ -2775,7 +2805,7 @@ PSRawDataBW(FILE* fd, TIFF* tif, uint32 w, uint32 h)
 			bufsize = (uint32) bc[s];
 	}
 
-	tf_buf = (unsigned char*) _TIFFmalloc(bufsize);
+	tf_buf = (unsigned char*) limitMalloc(bufsize);
 	if (tf_buf == NULL) {
 		TIFFError(filename, "No space for strip buffer");
 		return;
@@ -2792,7 +2822,7 @@ PSRawDataBW(FILE* fd, TIFF* tif, uint32 w, uint32 h)
 	     * 5*bufsize/4.
 	     */
 
-	    ascii85_p = _TIFFmalloc( (bufsize+(bufsize/2)) + 8 );
+	    ascii85_p = limitMalloc( (bufsize+(bufsize/2)) + 8 );
 
 	    if ( !ascii85_p ) {
 		_TIFFfree( tf_buf );
@@ -3018,7 +3048,7 @@ tsize_t Ascii85EncodeBlock( uint8 * ascii85_p, unsigned f_eod, const uint8 * raw
             tsize_t         len;                /* Output this many bytes */
     
             len = raw_l + 1;
-            val32 = *++raw_p << 24;             /* Prime the pump */
+            val32 = (uint32)*++raw_p << 24;             /* Prime the pump */
     
             if ( --raw_l > 0 )  val32 += *(++raw_p) << 16;
             if ( --raw_l > 0 )  val32 += *(++raw_p) <<  8;
@@ -3057,52 +3087,49 @@ tsize_t Ascii85EncodeBlock( uint8 * ascii85_p, unsigned f_eod, const uint8 * raw
 #endif	/* EXP_ASCII85ENCODER */
 
 
-char* stuff[] = {
-"usage: tiff2ps [options] input.tif ...",
-"where options are:",
-" -1            generate PostScript Level 1 (default)",
-" -2            generate PostScript Level 2",
-" -3            generate PostScript Level 3",
-" -8            disable use of ASCII85 encoding with PostScript Level 2/3",
-" -a            convert all directories in file (default is first), Not EPS",
-" -b #          set the bottom margin to # inches",
-" -c            center image (-b and -l still add to this)",
-" -C name       set postscript document creator name",
-" -d #          set initial directory to # counting from zero",
-" -D            enable duplex printing (two pages per sheet of paper)",
-" -e            generate Encapsulated PostScript (EPS) (implies -z)",
-" -h #          set printed page height to # inches (no default)",
-" -w #          set printed page width to # inches (no default)",
-" -H #          split image if height is more than # inches",
-" -W #          split image if width is more than # inches",
-" -L #          overLap split images by # inches",
-" -i #          enable/disable (Nz/0) pixel interpolation (default: enable)",
-" -l #          set the left margin to # inches",
-" -m            use \"imagemask\" operator instead of \"image\"",
-" -o #          convert directory at file offset # bytes",
-" -O file       write PostScript to file instead of standard output",
-" -p            generate regular (non-encapsulated) PostScript",
-" -P L or P     set optional PageOrientation DSC comment to Landscape or Portrait",
-" -r # or auto  rotate by 90, 180, 270 degrees or auto",
-" -s            generate PostScript for a single image",
-" -t name       set postscript document title. Otherwise the filename is used",
-" -T            print pages for top edge binding",
-" -x            override resolution units as centimeters",
-" -y            override resolution units as inches",
-" -z            enable printing in the deadzone (only for PostScript Level 2/3)",
-NULL
-};
+static const char usage_info[] =
+"usage: tiff2ps [options] input.tif ...\n"
+"where options are:\n"
+" -1            generate PostScript Level 1 (default)\n"
+" -2            generate PostScript Level 2\n"
+" -3            generate PostScript Level 3\n"
+" -8            disable use of ASCII85 encoding with PostScript Level 2/3\n"
+" -a            convert all directories in file (default is first), Not EPS\n"
+" -b #          set the bottom margin to # inches\n"
+" -c            center image (-b and -l still add to this)\n"
+" -C name       set postscript document creator name\n"
+" -d #          set initial directory to # counting from zero\n"
+" -D            enable duplex printing (two pages per sheet of paper)\n"
+" -e            generate Encapsulated PostScript (EPS) (implies -z)\n"
+" -h #          set printed page height to # inches (no default)\n"
+" -w #          set printed page width to # inches (no default)\n"
+" -H #          split image if height is more than # inches\n"
+" -W #          split image if width is more than # inches\n"
+" -L #          overLap split images by # inches\n"
+" -i #          enable/disable (Nz/0) pixel interpolation (default: enable)\n"
+" -l #          set the left margin to # inches\n"
+" -m            use \"imagemask\" operator instead of \"image\"\n"
+" -M size       set the memory allocation limit in MiB. 0 to disable limit\n"
+" -o #          convert directory at file offset # bytes\n"
+" -O file       write PostScript to file instead of standard output\n"
+" -p            generate regular (non-encapsulated) PostScript\n"
+" -P L or P     set optional PageOrientation DSC comment to Landscape or Portrait\n"
+" -r # or auto  rotate by 90, 180, 270 degrees or auto\n"
+" -s            generate PostScript for a single image\n"
+" -t name       set postscript document title. Otherwise the filename is used\n"
+" -T            print pages for top edge binding\n"
+" -x            override resolution units as centimeters\n"
+" -y            override resolution units as inches\n"
+" -z            enable printing in the deadzone (only for PostScript Level 2/3)\n"
+;
 
 static void
 usage(int code)
 {
-	char buf[BUFSIZ];
-	int i;
+	FILE * out = (code == EXIT_SUCCESS) ? stdout : stderr;
 
-	setbuf(stderr, buf);
-        fprintf(stderr, "%s\n\n", TIFFGetVersion());
-	for (i = 0; stuff[i] != NULL; i++)
-		fprintf(stderr, "%s\n", stuff[i]);
+	fprintf(out, "%s\n\n", TIFFGetVersion());
+        fprintf(out, "%s", usage_info);
 	exit(code);
 }
 

@@ -639,7 +639,7 @@ static enum TIFFReadDirEntryErr TIFFReadDirEntryFloat(TIFF* tif, TIFFDirEntry* d
 				err=TIFFReadDirEntryCheckedDouble(tif,direntry,&m);
 				if (err!=TIFFReadDirEntryErrOk)
 					return(err);
-				if ((m > FLT_MAX) || (m < FLT_MIN))
+				if ((m > FLT_MAX) || (m < -FLT_MAX))
 					return(TIFFReadDirEntryErrRange);
 				*value=(float)m;
 				return(TIFFReadDirEntryErrOk);
@@ -838,6 +838,7 @@ static enum TIFFReadDirEntryErr TIFFReadDirEntryArrayWithLimit(
 	uint32 datasize;
 	void* data;
         uint64 target_count64;
+        int original_datasize_clamped;
 	typesize=TIFFDataWidth(direntry->tdir_type);
 
         target_count64 = (direntry->tdir_count > maxcount) ?
@@ -850,8 +851,14 @@ static enum TIFFReadDirEntryErr TIFFReadDirEntryArrayWithLimit(
 	}
         (void) desttypesize;
 
-        /*
-         * As a sanity check, make sure we have no more than a 2GB tag array
+        /* We just want to know if the original tag size is more than 4 bytes
+         * (classic TIFF) or 8 bytes (BigTIFF)
+         */
+        original_datasize_clamped =
+            ((direntry->tdir_count > 10) ? 10 : (int)direntry->tdir_count) * typesize;
+
+        /* 
+         * As a sanity check, make sure we have no more than a 2GB tag array 
          * in either the current data type or the dest data type.  This also
          * avoids problems with overflow of tmsize_t on 32bit systems.
          */
@@ -864,7 +871,7 @@ static enum TIFFReadDirEntryErr TIFFReadDirEntryArrayWithLimit(
 	datasize=(*count)*typesize;
 	assert((tmsize_t)datasize>0);
 
-	if( isMapped(tif) && datasize > (uint32)tif->tif_size )
+	if( isMapped(tif) && datasize > (uint64)tif->tif_size )
 		return TIFFReadDirEntryErrIo;
 
 	if( !isMapped(tif) &&
@@ -881,7 +888,7 @@ static enum TIFFReadDirEntryErr TIFFReadDirEntryArrayWithLimit(
 	}
 	if (!(tif->tif_flags&TIFF_BIGTIFF))
 	{
-		if (datasize<=4)
+		if (original_datasize_clamped<=4)
 			_TIFFmemcpy(data,&direntry->tdir_offset,datasize);
 		else
 		{
@@ -902,7 +909,7 @@ static enum TIFFReadDirEntryErr TIFFReadDirEntryArrayWithLimit(
 	}
 	else
 	{
-		if (datasize<=8)
+		if (original_datasize_clamped<=8)
 			_TIFFmemcpy(data,&direntry->tdir_offset,datasize);
 		else
 		{
@@ -3400,7 +3407,7 @@ TIFFReadDirEntryData(TIFF* tif, uint64 offset, tmsize_t size, void* dest)
                     return TIFFReadDirEntryErrIo;
                 }
 		mb=ma+size;
-		if (mb > (size_t)tif->tif_size)
+		if (mb > (uint64)tif->tif_size)
 			return(TIFFReadDirEntryErrIo);
 		_TIFFmemcpy(dest,tif->tif_base+ma,size);
 	}
@@ -4441,6 +4448,7 @@ TIFFReadCustomDirectory(TIFF* tif, toff_t diroff,
 	uint16 di;
 	const TIFFField* fip;
 	uint32 fii;
+        (*tif->tif_cleanup)(tif);   /* cleanup any previous compression state */
 	_TIFFSetupFields(tif, infoarray);
 	dircount=TIFFFetchDirectory(tif,diroff,&dir,NULL);
 	if (!dircount)
@@ -4543,6 +4551,17 @@ TIFFReadEXIFDirectory(TIFF* tif, toff_t diroff)
 	const TIFFFieldArray* exifFieldArray;
 	exifFieldArray = _TIFFGetExifFields();
 	return TIFFReadCustomDirectory(tif, diroff, exifFieldArray);
+}
+
+/*
+ *--: EXIF-GPS custom directory reading as another special case of custom IFD.
+ */
+int
+TIFFReadGPSDirectory(TIFF* tif, toff_t diroff)
+{
+	const TIFFFieldArray* gpsFieldArray;
+	gpsFieldArray = _TIFFGetGpsFields();
+	return TIFFReadCustomDirectory(tif, diroff, gpsFieldArray);  
 }
 
 static int
@@ -5264,10 +5283,33 @@ TIFFFetchNormalTag(TIFF* tif, TIFFDirEntry* dp, int recover)
 				assert(fip->field_readcount>=1);
 				assert(fip->field_passcount==0);
 				if (dp->tdir_count!=(uint64)fip->field_readcount)
-                                    /* corrupt file */;
+					/* corrupt file */;
 				else
 				{
 					err=TIFFReadDirEntryFloatArray(tif,dp,&data);
+					if (err==TIFFReadDirEntryErrOk)
+					{
+						int m;
+						m=TIFFSetField(tif,dp->tdir_tag,data);
+						if (data!=0)
+							_TIFFfree(data);
+						if (!m)
+							return(0);
+					}
+				}
+			}
+			break;
+		/*--: Rational2Double: Extend for Double Arrays and Rational-Arrays read into Double-Arrays. */
+		case TIFF_SETGET_C0_DOUBLE:
+			{
+				double* data;
+				assert(fip->field_readcount>=1);
+				assert(fip->field_passcount==0);
+				if (dp->tdir_count!=(uint64)fip->field_readcount)
+					/* corrupt file */;
+				else
+				{
+					err=TIFFReadDirEntryDoubleArray(tif,dp,&data);
 					if (err==TIFFReadDirEntryErrOk)
 					{
 						int m;
@@ -6404,7 +6446,7 @@ static int _TIFFFillStrilesInternal( TIFF *tif, int loadStripByteCount )
     if( td->td_stripoffset_p != NULL )
             return 1;
 
-    /* If tdir_count was cancelled, then we already got there, but in error */
+    /* If tdir_count was canceled, then we already got there, but in error */
     if( td->td_stripoffset_entry.tdir_count == 0 )
             return 0;
 
