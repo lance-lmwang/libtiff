@@ -3596,6 +3596,7 @@ int t2p_process_jpeg_strip(
 		uint16_t h_samp;
 		int j;
 		int ncomp;
+		int chop;
 
 		/* marker header: one or more FFs */
 		if (strip[i] != 0xff)
@@ -3616,12 +3617,6 @@ int t2p_process_jpeg_strip(
 				return(0);
 		}
 		switch( strip[i] ){
-			case 0xd8:	/* SOI - start of image */
-                if( *bufferoffset + 2 > buffersize )
-                    return(0);
-				_TIFFmemcpy(&(buffer[*bufferoffset]), &(strip[i-1]), 2);
-				*bufferoffset+=2;
-				break;
 			case 0xc0:	/* SOF0 */
 			case 0xc1:	/* SOF1 */
 			case 0xc3:	/* SOF3 */
@@ -3671,10 +3666,12 @@ int t2p_process_jpeg_strip(
 				break;
 			case 0xc4: /* DHT */
 			case 0xdb: /* DQT */
-                if( *bufferoffset + datalen + 2 > buffersize )
-                    return(0);
-				_TIFFmemcpy(&(buffer[*bufferoffset]), &(strip[i-1]), datalen+2);
-				*bufferoffset+=datalen+2;
+				if(no==0) {
+					if (*bufferoffset + datalen + 2 > buffersize)
+						return(0);
+					_TIFFmemcpy(&(buffer[*bufferoffset]), &(strip[i - 1]), datalen + 2);
+					*bufferoffset += datalen + 2;
+				}
 				break;
 			case 0xda: /* SOS */
 				if(no==0){
@@ -3693,9 +3690,12 @@ int t2p_process_jpeg_strip(
 				/* copy remainder of strip */
                 if( *bufferoffset + *striplength - i > buffersize )
                     return(0);
-				_TIFFmemcpy(&(buffer[*bufferoffset]), &(strip[i]), *striplength - i);
-				*bufferoffset+= *striplength - i;
+				/* chop terminating jpeg_eof_marker in case of attaching */
+				chop = (memcmp(&(strip[i + *striplength - i - 2]), jpeg_eof_marker, 2) == 0) ? 2 : 0;
+				_TIFFmemcpy(&(buffer[*bufferoffset]), &(strip[i]), *striplength - i - chop);
+				*bufferoffset+= *striplength - i - chop;
 				return(1);
+			case 0xd8:	/* SOI - start of image */
 			default:
 				/* ignore any other marker */
 				break;
@@ -5402,7 +5402,7 @@ tsize_t t2p_write_pdf_xobject_stream_filter(ttile_t tile, T2P* t2p, TIFF* output
 
 			if(t2p->tiff_photometric != PHOTOMETRIC_YCBCR) {
 				written += t2pWriteFile(output, (tdata_t) "/DecodeParms ", 13);
-				written += t2pWriteFile(output, (tdata_t) "<< /ColorTransform 1 >>\n", 24);
+				written += t2pWriteFile(output, (tdata_t) "<< /ColorTransform 0 >>\n", 24);
 			}
 			break;
 #endif
