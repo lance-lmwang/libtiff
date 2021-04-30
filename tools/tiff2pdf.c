@@ -3336,11 +3336,11 @@ tsize_t t2p_readwrite_pdf_image_tile(T2P* t2p, TIFF* input, TIFF* output, ttile_
 int t2p_process_ojpeg_tables(T2P* t2p, TIFF* input){
 	uint16_t proc=0;
 	void* q;
-	uint32_t q_length=0;
+	uint32_t q_count=0;
 	void* dc;
-	uint32_t dc_length=0;
+	uint32_t dc_count=0;
 	void* ac;
-	uint32_t ac_length=0;
+	uint32_t ac_count=0;
 	uint16_t* lp;
 	uint16_t* pt;
 	uint16_t h_samp=1;
@@ -3369,21 +3369,21 @@ int t2p_process_ojpeg_tables(T2P* t2p, TIFF* input){
 			t2p->t2p_error = T2P_ERR_ERROR;
 		return(0);
 	}
-	if(!TIFFGetField(input, TIFFTAG_JPEGQTABLES, &q_length, &q)){
+	if(!TIFFGetField(input, TIFFTAG_JPEGQTABLES, &q_count, &q)){
 		TIFFError(TIFF2PDF_MODULE, 
 			"Missing JPEGQTables field in OJPEG image %s", 
 			TIFFFileName(input));
 			t2p->t2p_error = T2P_ERR_ERROR;
 		return(0);
 	}
-	if(q_length < (64U * t2p->tiff_samplesperpixel)){
+	if(q_count < (t2p->tiff_samplesperpixel)){
 		TIFFError(TIFF2PDF_MODULE, 
 			"Bad JPEGQTables field in OJPEG image %s", 
 			TIFFFileName(input));
 			t2p->t2p_error = T2P_ERR_ERROR;
 		return(0);
 	} 
-	if(!TIFFGetField(input, TIFFTAG_JPEGDCTABLES, &dc_length, &dc)){
+	if(!TIFFGetField(input, TIFFTAG_JPEGDCTABLES, &dc_count, &dc)){
 		TIFFError(TIFF2PDF_MODULE, 
 			"Missing JPEGDCTables field in OJPEG image %s", 
 			TIFFFileName(input));
@@ -3391,7 +3391,7 @@ int t2p_process_ojpeg_tables(T2P* t2p, TIFF* input){
 		return(0);
 	}
 	if(proc==JPEGPROC_BASELINE){
-		if(!TIFFGetField(input, TIFFTAG_JPEGACTABLES, &ac_length, &ac)){
+		if(!TIFFGetField(input, TIFFTAG_JPEGACTABLES, &ac_count, &ac)){
 			TIFFError(TIFF2PDF_MODULE, 
 				"Missing JPEGACTables field in OJPEG image %s", 
 				TIFFFileName(input));
