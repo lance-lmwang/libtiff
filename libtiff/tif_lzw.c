@@ -563,7 +563,7 @@ LZWDecode(TIFF* tif, uint8_t* op0, tmsize_t occ0, uint16_t s)
 		TIFFErrorExt(tif->tif_clientdata, module,
 			"Not enough data at scanline %"PRIu32" (short %ld bytes)",
 			     tif->tif_row, occ);
-		return (0);
+		memset(op, 0, occ);
 	}
 	return (1);
 }
@@ -778,7 +778,7 @@ LZWDecodeCompat(TIFF* tif, uint8_t* op0, tmsize_t occ0, uint16_t s)
 		TIFFErrorExt(tif->tif_clientdata, module,
 			"Not enough data at scanline %"PRIu32" (short %ld bytes)",
 			     tif->tif_row, occ);
-		return (0);
+		memset(op, 0, occ);
 	}
 	return (1);
 }
