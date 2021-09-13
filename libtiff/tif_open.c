@@ -625,7 +625,7 @@ TIFFCurrentDirectory(TIFF* tif)
             " try using TIFFCurrentDirectory32 for increased limit.");
         return (65535);
     }
-    return ((uint16)tif->tif_curdir);
+    return ((uint16_t)tif->tif_curdir);
 }
 
 /*
