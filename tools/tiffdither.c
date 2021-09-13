@@ -23,6 +23,7 @@
  */
 
 #include "tif_config.h"
+#include "libport.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,10 +31,6 @@
 
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
-#endif
-
-#ifdef NEED_LIBPORT
-# include "libport.h"
 #endif
 
 #include "tiffio.h"
@@ -46,18 +43,14 @@
 #define EXIT_FAILURE 1
 #endif
 
-#ifndef HAVE_GETOPT
-extern int getopt(int argc, char * const argv[], const char *optstring);
-#endif
-
 #define	streq(a,b)	(strcmp(a,b) == 0)
 #define	strneq(a,b,n)	(strncmp(a,b,n) == 0)
 
 #define	CopyField(tag, v) \
 	if (TIFFGetField(in, tag, &v)) TIFFSetField(out, tag, v)
 
-uint32	imagewidth;
-uint32	imagelength;
+uint32_t	imagewidth;
+uint32_t	imagelength;
 int	threshold = 128;
 
 static	void usage(int code);
@@ -73,8 +66,8 @@ fsdither(TIFF* in, TIFF* out)
 	short *thisline, *nextline, *tmpptr;
 	register unsigned char	*outptr;
 	register short *thisptr, *nextptr;
-	register uint32 i, j;
-	uint32 imax, jmax;
+	register uint32_t i, j;
+	uint32_t imax, jmax;
 	int lastline, lastpixel;
 	int bit;
 	tsize_t outlinesize;
@@ -160,9 +153,9 @@ fsdither(TIFF* in, TIFF* out)
 	return errcode;
 }
 
-static	uint16 compression = COMPRESSION_PACKBITS;
-static	uint16 predictor = 0;
-static	uint32 group3options = 0;
+static	uint16_t compression = COMPRESSION_PACKBITS;
+static	uint16_t predictor = 0;
+static	uint32_t group3options = 0;
 
 static void
 processG3Options(char* cp)
@@ -213,11 +206,11 @@ int
 main(int argc, char* argv[])
 {
 	TIFF *in, *out;
-	uint16 samplesperpixel, bitspersample = 1, shortv;
+	uint16_t samplesperpixel, bitspersample = 1, shortv;
 	float floatv;
 	char thing[1024];
-	uint32 rowsperstrip = (uint32) -1;
-	uint16 fillorder = 0;
+	uint32_t rowsperstrip = (uint32_t) -1;
+	uint16_t fillorder = 0;
 	int c;
 #if !HAVE_DECL_OPTARG
 	extern int optind;
@@ -250,9 +243,12 @@ main(int argc, char* argv[])
 			break;
 		case 'h':
 			usage(EXIT_SUCCESS);
+                        /*NOTREACHED*/
+                        break;
 		case '?':
 			usage(EXIT_FAILURE);
 			/*NOTREACHED*/
+                        break;
 		}
 	if (argc - optind < 2)
 		usage(EXIT_FAILURE);
@@ -310,6 +306,7 @@ main(int argc, char* argv[])
 }
 
 static const char usage_info[] =
+"Convert a greyscale image to bilevel using dithering\n\n"
 "usage: tiffdither [options] input.tif output.tif\n"
 "where options are:\n"
 " -r #      make each strip have no more than # rows\n"
@@ -332,8 +329,8 @@ static const char usage_info[] =
 #ifdef CCITT_SUPPORT
 " -c g3[:opts]  compress output with CCITT Group 3 encoding\n"
 "    Group 3 options:\n"
-"    1d	        use default CCITT Group 3 1D-encoding\n"
-"    2d	        use optional CCITT Group 3 2D-encoding\n"
+"    1d         use default CCITT Group 3 1D-encoding\n"
+"    2d         use optional CCITT Group 3 2D-encoding\n"
 "    fill       byte-align EOL codes\n"
 "    For example, -c g3:2d:fill for G3-2D-encoded data with byte-aligned EOLs\n"
 " -c g4         compress output with CCITT Group 4 encoding\n"

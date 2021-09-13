@@ -23,6 +23,7 @@
  */
 
 #include "tif_config.h"
+#include "libport.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,10 +32,6 @@
 
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
-#endif
-
-#ifdef NEED_LIBPORT
-# include "libport.h"
 #endif
 
 #include "tiffio.h"
@@ -47,10 +44,6 @@
 #define EXIT_FAILURE 1
 #endif
 
-#ifndef HAVE_GETOPT
-extern int getopt(int argc, char * const argv[], const char *optstring);
-#endif
-
 /* x% weighting -> fraction of full color */
 #define	PCT(x)	(((x)*256+50)/100)
 int	RED = PCT(30);		/* 30% */
@@ -61,7 +54,7 @@ static	void usage(int code);
 static	int processCompressOptions(char*);
 
 static void
-compresscontig(unsigned char* out, unsigned char* rgb, uint32 n)
+compresscontig(unsigned char* out, unsigned char* rgb, uint32_t n)
 {
 	register int v, red = RED, green = GREEN, blue = BLUE;
 
@@ -75,9 +68,9 @@ compresscontig(unsigned char* out, unsigned char* rgb, uint32 n)
 
 static void
 compresssep(unsigned char* out,
-	    unsigned char* r, unsigned char* g, unsigned char* b, uint32 n)
+            unsigned char* r, unsigned char* g, unsigned char* b, uint32_t n)
 {
-	register uint32 red = RED, green = GREEN, blue = BLUE;
+	register uint32_t red = RED, green = GREEN, blue = BLUE;
 
 	while (n-- > 0)
 		*out++ = (unsigned char)
@@ -85,7 +78,7 @@ compresssep(unsigned char* out,
 }
 
 static int
-checkcmap(TIFF* tif, int n, uint16* r, uint16* g, uint16* b)
+checkcmap(TIFF* tif, int n, uint16_t* r, uint16_t* g, uint16_t* b)
 {
 	while (n-- > 0)
 		if (*r++ >= 256 || *g++ >= 256 || *b++ >= 256)
@@ -95,7 +88,7 @@ checkcmap(TIFF* tif, int n, uint16* r, uint16* g, uint16* b)
 }
 
 static void
-compresspalette(unsigned char* out, unsigned char* data, uint32 n, uint16* rmap, uint16* gmap, uint16* bmap)
+compresspalette(unsigned char* out, unsigned char* data, uint32_t n, uint16_t* rmap, uint16_t* gmap, uint16_t* bmap)
 {
 	register int v, red = RED, green = GREEN, blue = BLUE;
 
@@ -108,8 +101,8 @@ compresspalette(unsigned char* out, unsigned char* data, uint32 n, uint16* rmap,
 	}
 }
 
-static	uint16 compression = (uint16) -1;
-static	uint16 predictor = 0;
+static	uint16_t compression = (uint16_t) -1;
+static	uint16_t predictor = 0;
 static	int jpegcolormode = JPEGCOLORMODE_RGB;
 static	int quality = 75;		/* JPEG quality */
 
@@ -118,18 +111,18 @@ static	void cpTags(TIFF* in, TIFF* out);
 int
 main(int argc, char* argv[])
 {
-	uint32 rowsperstrip = (uint32) -1;
+	uint32_t rowsperstrip = (uint32_t) -1;
 	TIFF *in, *out;
-	uint32 w, h;
-	uint16 samplesperpixel;
-	uint16 bitspersample;
-	uint16 config;
-	uint16 photometric;
-	uint16* red;
-	uint16* green;
-	uint16* blue;
+	uint32_t w, h;
+	uint16_t samplesperpixel;
+	uint16_t bitspersample;
+	uint16_t config;
+	uint16_t photometric;
+	uint16_t* red;
+	uint16_t* green;
+	uint16_t* blue;
 	tsize_t rowsize;
-	register uint32 row;
+	register uint32_t row;
 	register tsample_t s;
 	unsigned char *inbuf, *outbuf;
 	char thing[1024];
@@ -164,9 +157,12 @@ main(int argc, char* argv[])
 			break;
 		case 'h':
 			usage(EXIT_SUCCESS);
+                        /*NOTREACHED*/
+                        break;
 		case '?':
 			usage(EXIT_FAILURE);
 			/*NOTREACHED*/
+                        break;
 		}
 	if (argc - optind < 2)
 		usage(EXIT_FAILURE);
@@ -213,7 +209,7 @@ main(int argc, char* argv[])
 	TIFFSetField(out, TIFFTAG_SAMPLESPERPIXEL, 1);
 	TIFFSetField(out, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
 	cpTags(in, out);
-	if (compression != (uint16) -1) {
+	if (compression != (uint16_t) -1) {
 		TIFFSetField(out, TIFFTAG_COMPRESSION, compression);
 		switch (compression) {
 		case COMPRESSION_JPEG:
@@ -380,27 +376,27 @@ processCompressOptions(char* opt)
     if (TIFFGetField(in, tag, &v1, &v2, &v3, &v4)) TIFFSetField(out, tag, v1, v2, v3, v4)
 
 static void
-cpTag(TIFF* in, TIFF* out, uint16 tag, uint16 count, TIFFDataType type)
+cpTag(TIFF* in, TIFF* out, uint16_t tag, uint16_t count, TIFFDataType type)
 {
 	switch (type) {
 	case TIFF_SHORT:
 		if (count == 1) {
-			uint16 shortv;
+			uint16_t shortv;
 			CopyField(tag, shortv);
 		} else if (count == 2) {
-			uint16 shortv1, shortv2;
+			uint16_t shortv1, shortv2;
 			CopyField2(tag, shortv1, shortv2);
 		} else if (count == 4) {
-			uint16 *tr, *tg, *tb, *ta;
+			uint16_t *tr, *tg, *tb, *ta;
 			CopyField4(tag, tr, tg, tb, ta);
-		} else if (count == (uint16) -1) {
-			uint16 shortv1;
-			uint16* shortav;
+		} else if (count == (uint16_t) -1) {
+			uint16_t shortv1;
+			uint16_t* shortav;
 			CopyField2(tag, shortv1, shortav);
 		}
 		break;
 	case TIFF_LONG:
-		{ uint32 longv;
+		{ uint32_t longv;
 		  CopyField(tag, longv);
 		}
 		break;
@@ -408,7 +404,7 @@ cpTag(TIFF* in, TIFF* out, uint16 tag, uint16 count, TIFFDataType type)
 		if (count == 1) {
 			float floatv;
 			CopyField(tag, floatv);
-		} else if (count == (uint16) -1) {
+		} else if (count == (uint16_t) -1) {
 			float* floatav;
 			CopyField(tag, floatav);
 		}
@@ -422,7 +418,7 @@ cpTag(TIFF* in, TIFF* out, uint16 tag, uint16 count, TIFFDataType type)
 		if (count == 1) {
 			double doublev;
 			CopyField(tag, doublev);
-		} else if (count == (uint16) -1) {
+		} else if (count == (uint16_t) -1) {
 			double* doubleav;
 			CopyField(tag, doubleav);
 		}
@@ -440,8 +436,8 @@ cpTag(TIFF* in, TIFF* out, uint16 tag, uint16 count, TIFFDataType type)
 #undef CopyField
 
 static const struct cpTag {
-	uint16	tag;
-	uint16	count;
+	uint16_t	tag;
+	uint16_t	count;
 	TIFFDataType type;
 } tags[] = {
 	{ TIFFTAG_SUBFILETYPE,		1, TIFF_LONG },
@@ -453,30 +449,30 @@ static const struct cpTag {
 	{ TIFFTAG_MINSAMPLEVALUE,	1, TIFF_SHORT },
 	{ TIFFTAG_MAXSAMPLEVALUE,	1, TIFF_SHORT },
 	{ TIFFTAG_XRESOLUTION,		1, TIFF_RATIONAL },
-	{ TIFFTAG_YRESOLUTION,		1, TIFF_RATIONAL },
-	{ TIFFTAG_PAGENAME,		1, TIFF_ASCII },
-	{ TIFFTAG_XPOSITION,		1, TIFF_RATIONAL },
-	{ TIFFTAG_YPOSITION,		1, TIFF_RATIONAL },
-	{ TIFFTAG_RESOLUTIONUNIT,	1, TIFF_SHORT },
-	{ TIFFTAG_SOFTWARE,		1, TIFF_ASCII },
-	{ TIFFTAG_DATETIME,		1, TIFF_ASCII },
-	{ TIFFTAG_ARTIST,		1, TIFF_ASCII },
-	{ TIFFTAG_HOSTCOMPUTER,		1, TIFF_ASCII },
-	{ TIFFTAG_WHITEPOINT,		2, TIFF_RATIONAL },
-	{ TIFFTAG_PRIMARYCHROMATICITIES,(uint16) -1,TIFF_RATIONAL },
-	{ TIFFTAG_HALFTONEHINTS,	2, TIFF_SHORT },
-	{ TIFFTAG_INKSET,		1, TIFF_SHORT },
-	{ TIFFTAG_DOTRANGE,		2, TIFF_SHORT },
-	{ TIFFTAG_TARGETPRINTER,	1, TIFF_ASCII },
-	{ TIFFTAG_SAMPLEFORMAT,		1, TIFF_SHORT },
-	{ TIFFTAG_YCBCRCOEFFICIENTS,	(uint16) -1,TIFF_RATIONAL },
-	{ TIFFTAG_YCBCRSUBSAMPLING,	2, TIFF_SHORT },
-	{ TIFFTAG_YCBCRPOSITIONING,	1, TIFF_SHORT },
-	{ TIFFTAG_REFERENCEBLACKWHITE,	(uint16) -1,TIFF_RATIONAL },
-	{ TIFFTAG_EXTRASAMPLES,		(uint16) -1, TIFF_SHORT },
-	{ TIFFTAG_SMINSAMPLEVALUE,	1, TIFF_DOUBLE },
-	{ TIFFTAG_SMAXSAMPLEVALUE,	1, TIFF_DOUBLE },
-	{ TIFFTAG_STONITS,		1, TIFF_DOUBLE },
+	{ TIFFTAG_YRESOLUTION,		1,                 TIFF_RATIONAL },
+	{ TIFFTAG_PAGENAME,		1,                    TIFF_ASCII },
+	{ TIFFTAG_XPOSITION,		1,                   TIFF_RATIONAL },
+	{ TIFFTAG_YPOSITION,		1,                   TIFF_RATIONAL },
+	{ TIFFTAG_RESOLUTIONUNIT,	1,                  TIFF_SHORT },
+	{ TIFFTAG_SOFTWARE,		1,                    TIFF_ASCII },
+	{ TIFFTAG_DATETIME,		1,                    TIFF_ASCII },
+	{ TIFFTAG_ARTIST,		1,                      TIFF_ASCII },
+	{ TIFFTAG_HOSTCOMPUTER,		1,                TIFF_ASCII },
+	{ TIFFTAG_WHITEPOINT,		2,                  TIFF_RATIONAL },
+	{ TIFFTAG_PRIMARYCHROMATICITIES,(uint16_t) -1,   TIFF_RATIONAL },
+	{ TIFFTAG_HALFTONEHINTS,	2,                   TIFF_SHORT },
+	{ TIFFTAG_INKSET,		1,                      TIFF_SHORT },
+	{ TIFFTAG_DOTRANGE,		2,                    TIFF_SHORT },
+	{ TIFFTAG_TARGETPRINTER,	1,                   TIFF_ASCII },
+	{ TIFFTAG_SAMPLEFORMAT,		1,                TIFF_SHORT },
+	{ TIFFTAG_YCBCRCOEFFICIENTS,	(uint16_t) -1,   TIFF_RATIONAL },
+	{ TIFFTAG_YCBCRSUBSAMPLING,	2,                TIFF_SHORT },
+	{ TIFFTAG_YCBCRPOSITIONING,	1,                TIFF_SHORT },
+	{ TIFFTAG_REFERENCEBLACKWHITE,	(uint16_t) -1, TIFF_RATIONAL },
+	{ TIFFTAG_EXTRASAMPLES,		(uint16_t) -1,    TIFF_SHORT },
+	{ TIFFTAG_SMINSAMPLEVALUE,	1,                 TIFF_DOUBLE },
+	{ TIFFTAG_SMAXSAMPLEVALUE,	1,                 TIFF_DOUBLE },
+	{ TIFFTAG_STONITS,		1,                     TIFF_DOUBLE },
 };
 #define	NTAGS	(sizeof (tags) / sizeof (tags[0]))
 
@@ -488,14 +484,14 @@ cpTags(TIFF* in, TIFF* out)
     {
         if( p->tag == TIFFTAG_GROUP3OPTIONS )
         {
-            uint16 compression;
+            uint16_t compression;
             if( !TIFFGetField(in, TIFFTAG_COMPRESSION, &compression) ||
                     compression != COMPRESSION_CCITTFAX3 )
                 continue;
         }
         if( p->tag == TIFFTAG_GROUP4OPTIONS )
         {
-            uint16 compression;
+            uint16_t compression;
             if( !TIFFGetField(in, TIFFTAG_COMPRESSION, &compression) ||
                     compression != COMPRESSION_CCITTFAX4 )
                 continue;
@@ -506,6 +502,7 @@ cpTags(TIFF* in, TIFF* out)
 #undef NTAGS
 
 static const char usage_info[] =
+"Convert a color TIFF image to greyscale\n\n"
 "usage: tiff2bw [options] input.tif output.tif\n"
 "where options are:\n"
 " -R %		use #% from red channel\n"

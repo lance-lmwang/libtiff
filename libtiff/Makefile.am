@@ -29,15 +29,11 @@ libtiffincludedir = $(includedir)
 
 EXTRA_DIST = \
 	CMakeLists.txt \
-	Makefile.vc \
-	SConstruct \
 	libtiff.def \
 	libtiff.map \
 	libtiffxx.map \
 	tif_config.h.cmake.in \
-	tif_config.vc.h \
-	tiffconf.h.cmake.in \
-	tiffconf.vc.h
+	tiffconf.h.cmake.in
 
 libtiffinclude_HEADERS = \
 	tiff.h \
@@ -78,6 +74,7 @@ libtiff_la_SOURCES = \
 	tif_jbig.c \
 	tif_jpeg.c \
 	tif_jpeg_12.c \
+	tif_lerc.c \
 	tif_luv.c \
 	tif_lzma.c \
 	tif_lzw.c \
@@ -125,7 +122,6 @@ endif
 if HAVE_LD_VERSION_SCRIPT
 libtiff_la_LDFLAGS += -Wl,--version-script=$(srcdir)/libtiff.map
 endif
-libtiff_la_LIBADD = $(LIBPORT)
 
 libtiffxx_la_LDFLAGS = \
 	-no-undefined \
@@ -136,7 +132,7 @@ endif
 if HAVE_LD_VERSION_SCRIPT
 libtiffxx_la_LDFLAGS += -Wl,--version-script=$(srcdir)/libtiffxx.map
 endif
-libtiffxx_la_LIBADD = $(LIBTIFF) $(LIBPORT)
+libtiffxx_la_LIBADD = $(LIBTIFF)
 libtiffxx_la_DEPENDENCIES = libtiff.la
 
 #
@@ -151,3 +147,4 @@ mkg3states_LDADD = $(LIBPORT)
 faxtable: mkg3states
 	(rm -f tif_fax3sm.c && ./mkg3states -b -c const tif_fax3sm.c)
 
+AM_CPPFLAGS = -I$(top_srcdir)/libtiff -I$(top_srcdir)/port

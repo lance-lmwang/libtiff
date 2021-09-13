@@ -28,6 +28,7 @@
  *      Copyright (C) 1990, 1995  Frank D. Cringle.
  */
 #include "tif_config.h"
+#include "libport.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,10 +40,6 @@
 
 #include "tif_fax3.h"
 
-#ifndef HAVE_GETOPT
-extern int getopt(int argc, char * const argv[], const char *optstring);
-#endif
-
 #define	streq(a,b)	(strcmp(a,b) == 0)
 
 /* NB: can't use names in tif_fax3.h 'cuz they are declared const */
@@ -51,8 +48,8 @@ TIFFFaxTabEnt WhiteTable[4096];
 TIFFFaxTabEnt BlackTable[8192];
 
 struct proto {
-    uint16 code;		/* right justified, lsb-first, zero filled */
-    uint16 val;		/* (pixel count)<<4 + code width  */
+    uint16_t code;		/* right justified, lsb-first, zero filled */
+    uint16_t val;		/* (pixel count)<<4 + code width  */
 };
 
 static struct proto Pass[] = {
