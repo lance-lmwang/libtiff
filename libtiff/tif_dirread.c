@@ -4694,7 +4694,7 @@ TIFFCheckDirOffset(TIFF* tif, uint64_t diroff)
 
 	if (diroff == 0)			/* no more directories */
 		return 0;
-	if (tif->tif_dirnumber == (uint32) -1) {
+	if (tif->tif_dirnumber == (uint32_t) -1) {
 	    TIFFErrorExt(tif->tif_clientdata, "TIFFCheckDirOffset",
 			 "Cannot handle more than 2^32-1 of TIFF directories");
 	    return 0;
@@ -4718,8 +4718,8 @@ TIFFCheckDirOffset(TIFF* tif, uint64_t diroff)
                                                    tif->tif_dirnumber, 2 * sizeof(uint64_t), "for IFD list");
 		if (!new_dirlist)
 			return 0;
-		if( tif->tif_dirnumber >= ((uint32)-1)/2)
-		    tif->tif_dirlistsize = (uint32)-1;
+		if( tif->tif_dirnumber >= ((uint32_t)-1)/2)
+		    tif->tif_dirlistsize = (uint32_t)-1;
 		else
 		    tif->tif_dirlistsize = 2 * tif->tif_dirnumber;
 		tif->tif_dirlist = new_dirlist;
