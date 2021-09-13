@@ -33,7 +33,7 @@ AC_LANG(C)
 dnl Compute the canonical host (run-time) system type variable
 AC_CANONICAL_HOST
 
-AM_INIT_AUTOMAKE(tar-ustar)
+AM_INIT_AUTOMAKE([dist-xz tar-ustar])
 dnl Do not rebuild generated files every time
 AM_MAINTAINER_MODE
 
@@ -159,6 +159,9 @@ AM_SILENT_RULES
 
 tiff_libs_private=
 AC_SUBST(tiff_libs_private)
+
+tiff_requires_private=
+AC_SUBST(tiff_requires_private)
 
 dnl We don't need to add math library to all targets
 case "${host_os}" in
@@ -1080,7 +1083,7 @@ dnl ---------------------------------------------------------------------------
 
 AC_SUBST(LIBDIR)
 
-AC_CONFIG_HEADERS([config.h libtiff/tif_config.h libtiff/tiffconf.h port/libport_config.h])
+AC_CONFIG_HEADERS([config/config.h libtiff/tif_config.h libtiff/tiffconf.h port/libport_config.h])
 
 AC_CONFIG_FILES([Makefile \
 		 build/Makefile \
@@ -1095,15 +1098,15 @@ AC_CONFIG_FILES([Makefile \
 		 contrib/stream/Makefile \
 		 contrib/tags/Makefile \
 		 contrib/win_dib/Makefile \
-                 html/Makefile \
+		 html/Makefile \
 		 html/images/Makefile \
 		 html/man/Makefile \
-                 libtiff-4.pc \
-                 libtiff/Makefile \
-                 man/Makefile \
+		 libtiff-4.pc \
+		 libtiff/Makefile \
+		 man/Makefile \
 		 port/Makefile \
 		 test/Makefile \
-                 tools/Makefile])
+		 tools/Makefile])
 AC_OUTPUT
 
 dnl ---------------------------------------------------------------------------
