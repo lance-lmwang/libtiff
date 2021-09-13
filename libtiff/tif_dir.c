@@ -1671,7 +1671,7 @@ TIFFNumberOfDirectories(TIFF* tif)
             " try using TIFFNumberOfDirectories32 for increased limit.");
         return (65535);
     }
-    return ((uint16)n);
+    return ((uint16_t)n);
 }
 
 /*
@@ -1679,7 +1679,7 @@ TIFFNumberOfDirectories(TIFF* tif)
  * NB: Directories are numbered starting at 0.
  */
 int
-TIFFSetDirectory32(TIFF* tif, uint32 dirn)
+TIFFSetDirectory32(TIFF* tif, uint32_t dirn)
 {
 	uint64_t nextdir;
 	uint32_t n;
