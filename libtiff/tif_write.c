@@ -817,6 +817,27 @@ TIFFAppendToStrip(TIFF* tif, uint32_t strip, uint8_t* data, tmsize_t cc)
         else
             tempSize = 1024 * 1024;
 
+        /* Here, tempSize can be zero after a rare sequence of calls */
+        /* to TIFFAppendToStrip() that rewrite a 0-byte sparse tile in place. */
+        /* Avoid implementation-specific behavior of malloc(0) */
+        /* (returns NULL on some platforms, or a unique pointer on others). */
+        if (tempSize > 0)
+        {
+            temp = _TIFFmalloc(tempSize);
+            if (temp == NULL)
+            {
+                TIFFErrorExt(tif->tif_clientdata, module,
+                    "No space for output buffer. Requested %" TIFF_SSIZE_FORMAT, tempSize);
+                return (0);
+            }
+        }
+        else
+        {
+            /* No data will be copied to the end of the file. */
+            /* _TIFFfree(NULL) being called below is safe. */
+            temp = NULL;
+        }
+
         offsetRead = td->td_stripoffset_p[strip];
         offsetWrite = TIFFSeekFile(tif, 0, SEEK_END);
 
