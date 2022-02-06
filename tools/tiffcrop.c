@@ -5387,15 +5387,13 @@ computeInputPixelOffsets(struct crop_mask *crop, struct image_data *image,
   off->endx   = endx;
   off->endy   = endy;
 
-  crop_width  = endx - startx + 1;
-  crop_length = endy - starty + 1;
-
   if (endx + 1 <= startx)
     {
     TIFFError("computeInputPixelOffsets", 
                "Invalid left/right margins and /or image crop width requested");
     return (-1);
     }
+  crop_width  = endx - startx + 1;
   if (crop_width > image->width)
     crop_width = image->width;
 
@@ -5405,6 +5403,7 @@ computeInputPixelOffsets(struct crop_mask *crop, struct image_data *image,
               "Invalid top/bottom margins and /or image crop length requested");
     return (-1);
     }
+  crop_length = endy - starty + 1;
   if (crop_length > image->length)
     crop_length = image->length;
 
