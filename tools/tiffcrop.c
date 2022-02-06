@@ -5192,20 +5192,33 @@ computeInputPixelOffsets(struct crop_mask *crop, struct image_data *image,
 	y1 = (uint32_t) (crop->corners[i].Y1);
 	y2 = (uint32_t) (crop->corners[i].Y2);
 	}
-      /* region needs to be within image sizes 0.. width-1; 0..length-1 
-       * - be aware x,y are already casted to (uint32_t) and avoid (0 - 1)
+      /* a) Region needs to be within image sizes 0.. width-1; 0..length-1 
+       * b) Corners are expected to be submitted as top-left to bottom-right.
+       *    Therefore, check that and reorder input.
+       * (be aware x,y are already casted to (uint32_t) and avoid (0 - 1) )
        */
-     if (x1 > image->width - 1)
+      uint32_t aux;
+      if (x1 > x2) {
+        aux = x1;
+        x1 = x2;
+        x2 = aux;
+      }
+      if (y1 > y2) {
+        aux = y1;
+        y1 = y2;
+        y2 = aux;
+      }
+      if (x1 > image->width - 1)
         crop->regionlist[i].x1 = image->width - 1;
-     else if (x1 > 0)
-        crop->regionlist[i].x1 = (uint32_t) (x1 - 1);
+      else if (x1 > 0)
+        crop->regionlist[i].x1 = (uint32_t)(x1 - 1);
 
-     if (x2 > image->width - 1)
-       crop->regionlist[i].x2 = image->width - 1;
-     else if (x2 > 0)
-       crop->regionlist[i].x2 = (uint32_t)(x2 - 1);
+      if (x2 > image->width - 1)
+        crop->regionlist[i].x2 = image->width - 1;
+      else if (x2 > 0)
+        crop->regionlist[i].x2 = (uint32_t)(x2 - 1);
 
-      zwidth  = crop->regionlist[i].x2 - crop->regionlist[i].x1 + 1; 
+      zwidth = crop->regionlist[i].x2 - crop->regionlist[i].x1 + 1;
 
       if (y1 > image->length - 1)
         crop->regionlist[i].y1 = image->length - 1;
@@ -5217,8 +5230,7 @@ computeInputPixelOffsets(struct crop_mask *crop, struct image_data *image,
       else if (y2 > 0)
         crop->regionlist[i].y2 = (uint32_t)(y2 - 1);
 
-      zlength = crop->regionlist[i].y2 - crop->regionlist[i].y1 + 1; 
-
+      zlength = crop->regionlist[i].y2 - crop->regionlist[i].y1 + 1;
       if (zwidth > max_width)
         max_width = zwidth;
       if (zlength > max_length)
@@ -5248,7 +5260,7 @@ computeInputPixelOffsets(struct crop_mask *crop, struct image_data *image,
 	}
       }
     return (0);
-    }
+    }  /* crop_mode == CROP_REGIONS */
   
   /* Convert crop margins into offsets into image
    * Margins are expressed as pixel rows and columns, not bytes
@@ -5284,7 +5296,7 @@ computeInputPixelOffsets(struct crop_mask *crop, struct image_data *image,
       bmargin = (uint32_t) 0;
       return (-1);
       }
-    }
+    }  /* crop_mode == CROP_MARGINS */
   else
     { /* no margins requested */
     tmargin = (uint32_t) 0;
@@ -5492,10 +5504,17 @@ getCropOffsets(struct image_data *image, struct crop_mask *crop, struct dump_opt
   else
     crop->selections = crop->zones;
 
-  for (i = 0; i < crop->zones; i++)
+  /* Initialize regions iterator i */
+  i = 0;
+  for (int j = 0; j < crop->zones; j++)
     {
-    seg = crop->zonelist[i].position;
-    total = crop->zonelist[i].total;
+    seg = crop->zonelist[j].position;
+    total = crop->zonelist[j].total;
+
+    /* check for not allowed zone cases like 0:0; 4:3; etc. and skip that input */
+    if (seg == 0 || total == 0 || seg > total) {
+        continue;
+    }
 
     switch (crop->edge_ref) 
       {
@@ -5624,8 +5643,11 @@ getCropOffsets(struct image_data *image, struct crop_mask *crop, struct dump_opt
                     i + 1, zwidth, zlength,
                crop->regionlist[i].x1, crop->regionlist[i].x2,
                crop->regionlist[i].y1, crop->regionlist[i].y2);
+  /* increment regions iterator */
+  i++;
     }
-
+    /* set number of generated regions out of given zones */
+    crop->selections = i;
   return (0);
   } /* end getCropOffsets */
 
