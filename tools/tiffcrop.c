@@ -5192,26 +5192,30 @@ computeInputPixelOffsets(struct crop_mask *crop, struct image_data *image,
 	y1 = (uint32_t) (crop->corners[i].Y1);
 	y2 = (uint32_t) (crop->corners[i].Y2);
 	}
-      if (x1 < 1)
-        crop->regionlist[i].x1 = 0;
-      else
+      /* region needs to be within image sizes 0.. width-1; 0..length-1 
+       * - be aware x,y are already casted to (uint32_t) and avoid (0 - 1)
+       */
+     if (x1 > image->width - 1)
+        crop->regionlist[i].x1 = image->width - 1;
+     else if (x1 > 0)
         crop->regionlist[i].x1 = (uint32_t) (x1 - 1);
 
-      if (x2 > image->width - 1)
-        crop->regionlist[i].x2 = image->width - 1;
-      else
-        crop->regionlist[i].x2 = (uint32_t) (x2 - 1);
+     if (x2 > image->width - 1)
+       crop->regionlist[i].x2 = image->width - 1;
+     else if (x2 > 0)
+       crop->regionlist[i].x2 = (uint32_t)(x2 - 1);
+
       zwidth  = crop->regionlist[i].x2 - crop->regionlist[i].x1 + 1; 
 
-      if (y1 < 1)
-        crop->regionlist[i].y1 = 0;
-      else
-        crop->regionlist[i].y1 = (uint32_t) (y1 - 1);
+      if (y1 > image->length - 1)
+        crop->regionlist[i].y1 = image->length - 1;
+      else if (y1 > 0)
+        crop->regionlist[i].y1 = (uint32_t)(y1 - 1);
 
       if (y2 > image->length - 1)
         crop->regionlist[i].y2 = image->length - 1;
-      else
-        crop->regionlist[i].y2 = (uint32_t) (y2 - 1);
+      else if (y2 > 0)
+        crop->regionlist[i].y2 = (uint32_t)(y2 - 1);
 
       zlength = crop->regionlist[i].y2 - crop->regionlist[i].y1 + 1; 
 
@@ -5374,7 +5378,7 @@ computeInputPixelOffsets(struct crop_mask *crop, struct image_data *image,
   crop_width  = endx - startx + 1;
   crop_length = endy - starty + 1;
 
-  if (crop_width <= 0)
+  if (endx + 1 <= startx)
     {
     TIFFError("computeInputPixelOffsets", 
                "Invalid left/right margins and /or image crop width requested");
@@ -5383,7 +5387,7 @@ computeInputPixelOffsets(struct crop_mask *crop, struct image_data *image,
   if (crop_width > image->width)
     crop_width = image->width;
 
-  if (crop_length <= 0)
+  if (endy + 1 <= starty)
     {
     TIFFError("computeInputPixelOffsets", 
               "Invalid top/bottom margins and /or image crop length requested");
