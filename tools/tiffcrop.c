@@ -107,6 +107,9 @@
  *                selects which functions dump data, with higher numbers selecting
  *                lower level, scanline level routines. Debug reports a limited set
  *                of messages to monitor progress without enabling dump logs.
+ * 
+ * Note:    The (-X|-Y), -Z and -z options are mutually exclusive.
+ *          In no case should the options be applied to a given selection successively.
  */
 
 static   char tiffcrop_version_id[] = "2.5";
@@ -777,6 +780,9 @@ static const char usage_info[] =
 "\n"
 "             The four debug/dump options are independent, though it makes little sense to\n"
 "             specify a dump file without specifying a detail level.\n"
+"\n"
+"Note:        The (-X|-Y), -Z and -z options are mutually exclusive.\n"
+"             In no case should the options be applied to a given selection successively.\n"
 "\n"
 ;
 
@@ -2124,6 +2130,15 @@ void  process_command_opts (int argc, char *argv[], char *mp, char *mode, uint32
                 exit (EXIT_FAILURE);
 		/*NOTREACHED*/
       }
+    }
+    /*-- Check for not allowed combinations (e.g. -X, -Y and -Z and -z are mutually exclusive) --*/
+    char XY, Z, R;
+    XY = ((crop_data->crop_mode & CROP_WIDTH) || (crop_data->crop_mode & CROP_LENGTH));
+    Z = (crop_data->crop_mode & CROP_ZONES);
+    R = (crop_data->crop_mode & CROP_REGIONS);
+    if ((XY && Z) || (XY && R) || (Z && R)) {
+        TIFFError("tiffcrop input error", "The crop options(-X|-Y), -Z and -z are mutually exclusive.->Exit");
+        exit(EXIT_FAILURE);
     }
   }  /* end process_command_opts */
 
