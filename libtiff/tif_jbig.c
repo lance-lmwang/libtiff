@@ -208,7 +208,6 @@ int TIFFInitJBIG(TIFF* tif, int scheme)
 	 * to write to memory when necessary.
 	 */
 	tif->tif_flags |= TIFF_NOBITREV;
-	tif->tif_flags &= ~TIFF_MAPPED;
 
 	/* Setup the function pointers for encode, decode, and cleanup. */
 	tif->tif_setupdecode = JBIGSetupDecode;
