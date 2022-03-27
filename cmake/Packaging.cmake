@@ -1,6 +1,7 @@
-# CMake build for libtiff
+# Packaging options
 #
 # Copyright © 2015 Open Microscopy Environment / University of Dundee
+# Copyright © 2021 Roger Leigh <rleigh@codelibre.net>
 # Written by Roger Leigh <rleigh@codelibre.net>
 #
 # Permission to use, copy, modify, distribute, and sell this software and
@@ -18,17 +19,26 @@
 # IN NO EVENT SHALL SAM LEFFLER OR SILICON GRAPHICS BE LIABLE FOR
 # ANY SPECIAL, INCIDENTAL, INDIRECT OR CONSEQUENTIAL DAMAGES OF ANY KIND,
 # OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
-# WHETHER OR NOT ADVISED OF THE POSSIBILITY OF DAMAGE, AND ON ANY THEORY OF
+# WHETHER OR NOT ADVISED OF THE POSSIBILITY OF DAMAGE, AND ON ANY THEORY OFto
 # LIABILITY, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
 # OF THIS SOFTWARE.
 
-if(BUILD_TOOLS)
-  add_executable(addtiffo addtiffo.c tif_overview.c tif_ovrcache.c tif_ovrcache.h)
-  target_link_libraries(addtiffo tiff port)
+# Tools
+option(tools "build image manipulation tools" ON)
+set(BUILD_TOOLS ${tools})
 
-  if(WEBP_SUPPORT AND EMSCRIPTEN)
-    # Emscripten is pretty finnicky about linker flags.
-    # It needs --shared-memory if and only if atomics or bulk-memory is used.
-    target_link_options(addtiffo PUBLIC "-Wl,--shared-memory")
-  endif()
-endif()
+# Contrib
+option(contrib "build various contributed modules" ON)
+set(BUILD_CONTRIB ${contrib})
+
+# Man pages
+option(man-docs "build man pages" ON)
+set(BUILD_MAN_DOCS ${man-docs})
+
+# HTML documentation
+option(html-docs "build HTML documentation" ON)
+set(BUILD_HTML_DOCS ${html-docs})
+
+# Tests
+option(tests "build and run tests" ON)
+set(BUILD_TESTING ${tests})
