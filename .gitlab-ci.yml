@@ -2,7 +2,6 @@ image: registry.gitlab.com/libtiff/libtiff-ci-ubuntu20.04:latest
 
 stages:
   - build
-  - static-analysis
   - pages
 
 autoconf:
@@ -29,15 +28,6 @@ cmake-ninja-arm64:
     - sh build/gitlab-ci cmake "Ninja" Release
   rules:
     - if: '$CI_PROJECT_PATH == "libtiff/libtiff"'
-
-coverity:
-  stage: static-analysis
-  image: registry.gitlab.com/libtiff/libtiff-ci-ubuntu20.04-coverity:latest
-  script:
-    - sh build/gitlab-ci coverity "Ninja" Debug
-  only:
-    refs:
-      - master
 
 pages:
   stage: pages
