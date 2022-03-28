@@ -193,19 +193,36 @@ endif()
 set(TEST_OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/output")
 file(MAKE_DIRECTORY "${TEST_OUTPUT}")
 
-if(LIBTIFF_BUILD_TOOLS)
-  set(tiff_test_extra_args
-      "-DTIFFCP=$<TARGET_FILE:tiffcp>"
-      "-DTIFFINFO=$<TARGET_FILE:tiffinfo>"
-      "-DTIFFSPLIT=$<TARGET_FILE:tiffsplit>"
-      "-DLIBTIFF=$<TARGET_FILE:tiff>")
-  if(WIN32)
-    list(APPEND tiff_test_extra_args "-DWIN32=${WIN32}")
-  endif()
-  if(CYGWIN)
-    list(APPEND tiff_test_extra_args "-DCYGWIN=${CYGWIN}")
-  endif()
+set(tiff_test_extra_args "-DLIBTIFF=$<TARGET_FILE:tiff>")
 
+if(LIBTIFF_BUILD_TOOLS)
+  list(APPEND tiff_test_extra_args "-DTIFFCP=$<TARGET_FILE:tiffcp>")
+  list(APPEND tiff_test_extra_args "-DTIFFINFO=$<TARGET_FILE:tiffinfo>")
+  list(APPEND tiff_test_extra_args "-DTIFFSPLIT=$<TARGET_FILE:tiffsplit>")
+endif()
+
+if(WIN32)
+  list(APPEND tiff_test_extra_args "-DWIN32=${WIN32}")
+endif()
+if(CYGWIN)
+  list(APPEND tiff_test_extra_args "-DCYGWIN=${CYGWIN}")
+endif()
+
+function(tiff_test_stdout_noargs name command)
+  add_test(NAME "${name}"
+          COMMAND "${CMAKE_COMMAND}"
+          "-DSTDOUT_COMMAND=$<TARGET_FILE:${command}>"
+          ${tiff_test_extra_args}
+          -P "${CMAKE_CURRENT_SOURCE_DIR}/TiffTest.cmake"
+          WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+endfunction()
+
+# Plain executables with no arguments
+foreach(target IN LISTS simple_tests)
+  tiff_test_stdout_noargs("${target}" "${target}")
+endforeach()
+
+if(LIBTIFF_BUILD_TOOLS)
   function(tiff_test_convert name command1 command2 command3 infile outfile validate)
     add_test(NAME "${name}"
             COMMAND "${CMAKE_COMMAND}"
@@ -230,15 +247,6 @@ if(LIBTIFF_BUILD_TOOLS)
             "-DOUTFILE=${outfile}"
             ${tiff_test_extra_args}
             -P "${CMAKE_CURRENT_SOURCE_DIR}/TiffTest.cmake")
-  endfunction()
-
-  function(tiff_test_stdout_noargs name command)
-    add_test(NAME "${name}"
-            COMMAND "${CMAKE_COMMAND}"
-            "-DSTDOUT_COMMAND=$<TARGET_FILE:${command}>"
-            ${tiff_test_extra_args}
-            -P "${CMAKE_CURRENT_SOURCE_DIR}/TiffTest.cmake"
-            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
   endfunction()
 
   function(tiff_test_reader name command infile)
@@ -331,11 +339,6 @@ if(LIBTIFF_BUILD_TOOLS)
     set(infile "${CMAKE_CURRENT_SOURCE_DIR}/${image}")
     tiff_test_reader("${testname}" "${command}" "${infile}")
   endfunction()
-
-  # Plain executables with no arguments
-  foreach(target IN LISTS simple_tests)
-    tiff_test_stdout_noargs("${target}" "${target}")
-  endforeach()
 
 
   # PPM
