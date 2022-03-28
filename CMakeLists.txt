@@ -138,19 +138,19 @@ add_subdirectory(port)
 add_subdirectory(libtiff)
 add_subdirectory(build)
 
-if(BUILD_TOOLS)
+if(LIBTIFF_BUILD_TOOLS)
   add_subdirectory(tools)
 endif()
 
-if(BUILD_CONTRIB)
+if(LIBTIFF_BUILD_CONTRIB)
   add_subdirectory(contrib)
 endif()
 
-if(BUILD_MAN_DOCS)
+if(LIBTIFF_BUILD_MAN)
   add_subdirectory(man)
 endif()
 
-if(BUILD_HTML_DOCS)
+if(LIBTIFF_BUILD_HTML)
   add_subdirectory(html)
 endif()
 

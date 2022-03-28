@@ -217,7 +217,7 @@ if(CXX_SUPPORT)
 
 endif()
 
-if(BUILD_TOOLS)
+if(LIBTIFF_BUILD_TOOLS)
   add_executable(mkg3states ../placeholder.h)
   target_sources(mkg3states PRIVATE mkg3states.c tif_fax3.h)
   target_link_libraries(mkg3states tiff port)

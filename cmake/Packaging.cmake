@@ -24,21 +24,20 @@
 # OF THIS SOFTWARE.
 
 # Tools
-option(tools "build image manipulation tools" ON)
-set(BUILD_TOOLS ${tools})
+option(LIBTIFF_BUILD_TOOLS "build image manipulation tools" ON)
 
 # Contrib
-option(contrib "build various contributed modules" ON)
-set(BUILD_CONTRIB ${contrib})
+option(LIBTIFF_BUILD_CONTRIB "build various contributed modules" ON)
 
 # Man pages
-option(man-docs "build man pages" ON)
-set(BUILD_MAN_DOCS ${man-docs})
+option(LIBTIFF_BUILD_MAN "build man pages" ON)
 
 # HTML documentation
-option(html-docs "build HTML documentation" ON)
-set(BUILD_HTML_DOCS ${html-docs})
+option(LIBTIFF_BUILD_HTML "build HTML documentation" ON)
 
 # Tests
-option(tests "build and run tests" ON)
-set(BUILD_TESTING ${tests})
+option(LIBTIFF_BUILD_TESTS "build and run tests" ON)
+
+if(DEFINED LIBTIFF_BUILD_TESTS)
+  set(BUILD_TESTING ${LIBTIFF_BUILD_TESTS})
+endif()

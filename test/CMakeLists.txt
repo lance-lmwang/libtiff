@@ -193,7 +193,7 @@ endif()
 set(TEST_OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/output")
 file(MAKE_DIRECTORY "${TEST_OUTPUT}")
 
-if(BUILD_TOOLS)
+if(LIBTIFF_BUILD_TOOLS)
   set(tiff_test_extra_args
       "-DTIFFCP=$<TARGET_FILE:tiffcp>"
       "-DTIFFINFO=$<TARGET_FILE:tiffinfo>"
