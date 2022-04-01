@@ -78,7 +78,7 @@ if LIBTIFF_BUILD_TESTS
   MAYBE_TEST=test
 endif
 
-SUBDIRS = port libtiff build $(MAYBE_TOOLS) $(MAYBE_CONTRIB) $(MAYBE_MAN) $(MAYBE_HTML) $(MAYBE_TESTS)
+SUBDIRS = port libtiff $(MAYBE_TOOLS) $(MAYBE_CONTRIB) $(MAYBE_MAN) $(MAYBE_HTML) $(MAYBE_TESTS)
 
 release:
 	(rm -f $(top_srcdir)/RELEASE-DATE && echo $(LIBTIFF_RELEASE_DATE) > $(top_srcdir)/RELEASE-DATE)

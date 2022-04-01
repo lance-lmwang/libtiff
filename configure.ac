@@ -1133,7 +1133,6 @@ AC_SUBST(LIBDIR)
 AC_CONFIG_HEADERS([config/config.h libtiff/tif_config.h libtiff/tiffconf.h port/libport_config.h])
 
 AC_CONFIG_FILES([Makefile \
-		 build/Makefile \
 		 libtiff-4.pc \
 		 libtiff/Makefile \
 		 port/Makefile])

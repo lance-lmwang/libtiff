@@ -136,7 +136,6 @@ include(Packaging)
 # Process subdirectories
 add_subdirectory(port)
 add_subdirectory(libtiff)
-add_subdirectory(build)
 
 if(LIBTIFF_BUILD_TOOLS)
   add_subdirectory(tools)
