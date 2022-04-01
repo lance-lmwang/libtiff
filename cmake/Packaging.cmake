@@ -23,21 +23,21 @@
 # LIABILITY, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
 # OF THIS SOFTWARE.
 
-# Tools
-option(LIBTIFF_BUILD_TOOLS "build image manipulation tools" ON)
+option(tiff-tools "build image manipulation tools" ON)
+set(LIBTIFF_BUILD_TOOLS ${tools})
 
 # Contrib
-option(LIBTIFF_BUILD_CONTRIB "build various contributed modules" ON)
+option(tiff-contrib "build various contributed modules" ON)
+set(LIBTIFF_BUILD_CONTRIB ${tiff-contrib})
 
 # Man pages
-option(LIBTIFF_BUILD_MAN "build man pages" ON)
+option(tiff-man "build man pages" ON)
+set(LIBTIFF_BUILD_MAN ${tiff-man})
 
 # HTML documentation
-option(LIBTIFF_BUILD_HTML "build HTML documentation" ON)
+option(tiff-html "build HTML documentation" ON)
+set(LIBTIFF_BUILD_HTML ${tiff-html})
 
 # Tests
-option(LIBTIFF_BUILD_TESTS "build and run tests" ON)
-
-if(DEFINED LIBTIFF_BUILD_TESTS)
-  set(BUILD_TESTING ${LIBTIFF_BUILD_TESTS})
-endif()
+option(tiff-tests "build and run tests" ON)
+set(BUILD_TESTING ${tiff-tests})
