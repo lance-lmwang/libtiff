@@ -1091,36 +1091,36 @@ dnl ---------------------------------------------------------------------------
 dnl Default handling of packaging options.
 dnl ---------------------------------------------------------------------------
 
-AC_ARG_ENABLE(tiff-build-tools,
-              AS_HELP_STRING([--disable-tiff-build-tools],
+AC_ARG_ENABLE(tiff-tools,
+              AS_HELP_STRING([--disable-tiff-tools],
                              [disable building of image manipulation tools]),
               [LIBTIFF_BUILD_TOOLS=$enableval],
               [LIBTIFF_BUILD_TOOLS=yes])
 AM_CONDITIONAL(LIBTIFF_BUILD_TOOLS, test "$LIBTIFF_BUILD_TOOLS" = 'yes')
 
-AC_ARG_ENABLE(tiff-build-contrib,
-              AS_HELP_STRING([--disable-tiff-build-contrib],
+AC_ARG_ENABLE(tiff-contrib,
+              AS_HELP_STRING([--disable-tiff-contrib],
                              [disable building of various contributed modules]),
               [LIBTIFF_BUILD_CONTRIB=$enableval],
               [LIBTIFF_BUILD_CONTRIB=yes])
 AM_CONDITIONAL(LIBTIFF_BUILD_CONTRIB, test "$LIBTIFF_BUILD_CONTRIB" = 'yes')
 
-AC_ARG_ENABLE(tiff-build-man,
-              AS_HELP_STRING([--disable-tiff-build-man],
+AC_ARG_ENABLE(tiff-man,
+              AS_HELP_STRING([--disable-tiff-man],
                              [disable building of man pages]),
               [LIBTIFF_BUILD_MAN=$enableval],
               [LIBTIFF_BUILD_MAN=yes])
 AM_CONDITIONAL(LIBTIFF_BUILD_MAN, test "$LIBTIFF_BUILD_MAN" = 'yes')
 
-AC_ARG_ENABLE(tiff-build-html,
-              AS_HELP_STRING([--disable-tiff-build-html],
+AC_ARG_ENABLE(tiff-html,
+              AS_HELP_STRING([--disable-tiff-html],
                              [disable building of HTML documentation]),
               [LIBTIFF_BUILD_HTML=$enableval],
               [LIBTIFF_BUILD_HTML=yes])
 AM_CONDITIONAL(LIBTIFF_BUILD_HTML, test "$LIBTIFF_BUILD_HTML" = 'yes')
 
-AC_ARG_ENABLE(tiff-build-tests,
-              AS_HELP_STRING([--disable-tiff-build-tests],
+AC_ARG_ENABLE(tiff-tests,
+              AS_HELP_STRING([--disable-tiff-tests],
                              [disable building and running tests]),
               [LIBTIFF_BUILD_TESTS=$enableval],
               [LIBTIFF_BUILD_TESTS=yes])
