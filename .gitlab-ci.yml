@@ -12,6 +12,15 @@ autoconf:
   after_script:
     - 'cat autoconf-build/test/test-suite.log'
 
+autoconf-library-only:
+  stage: build
+  script:
+    - sh build/gitlab-ci autoconf
+      --disable-tiff-tools --disable-tiff-contrib --disable-tiff-man
+      --disable-tiff-html --disable-tiff-tests
+  after_script:
+    - 'cat autoconf-build/test/test-suite.log'
+
 cmake-makefiles:
   stage: build
   script:
