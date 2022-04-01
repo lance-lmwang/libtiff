@@ -52,6 +52,12 @@ XFAIL_TESTS =
 # Extra files which should be cleaned by 'make clean'
 CLEANFILES = test_packbits.tif o-*
 
+# Some test scripts are only available when building tools
+
+if LIBTIFF_BUILD_TOOLS
+
+# Some test scripts are only available when building with JPEG enabled
+
 if HAVE_JPEG
 JPEG_DEPENDENT_CHECK_PROG=raw_decode
 JPEG_DEPENDENT_TESTSCRIPTS=\
@@ -59,20 +65,12 @@ JPEG_DEPENDENT_TESTSCRIPTS=\
 	tiff2rgba-ojpeg_zackthecat_subsamp22_single_strip.sh \
 	tiff2rgba-ojpeg_chewey_subsamp21_multi_strip.sh \
 	tiff2rgba-ojpeg_single_strip_no_rowsperstrip.sh
-
 else
 JPEG_DEPENDENT_CHECK_PROG=
 JPEG_DEPENDENT_TESTSCRIPTS=
 endif
 
-# Executable programs which need to be built in order to support tests
-check_PROGRAMS = \
-	ascii_tag long_tag short_tag strip_rw rewrite custom_dir custom_dir_EXIF_231 \
-	rational_precision2double defer_strile_loading defer_strile_writing test_directory \
-	testtypes $(JPEG_DEPENDENT_CHECK_PROG)
-
-# Test scripts to execute
-TESTSCRIPTS = \
+TOOL_DEPENDENT_TESTSCRIPTS=\
 	ppm2tiff_pbm.sh \
 	ppm2tiff_pgm.sh \
 	ppm2tiff_ppm.sh \
@@ -150,7 +148,22 @@ TESTSCRIPTS = \
 	tiff2rgba-rgb-3c-16b.sh \
 	tiff2rgba-rgb-3c-8b.sh \
 	testfax4.sh \
-	testdeflatelaststripextradata.sh \
+	testdeflatelaststripextradata.sh
+else
+JPEG_DEPENDENT_CHECK_PROG=
+JPEG_DEPENDENT_TESTSCRIPTS=
+TOOL_DEPENDENT_TESTSCRIPTS=
+endif
+
+# Executable programs which need to be built in order to support tests
+check_PROGRAMS = \
+	ascii_tag long_tag short_tag strip_rw rewrite custom_dir custom_dir_EXIF_231 \
+	rational_precision2double defer_strile_loading defer_strile_writing test_directory \
+	testtypes $(JPEG_DEPENDENT_CHECK_PROG)
+
+# Test scripts to execute
+TESTSCRIPTS = \
+	${TOOL_DEPENDENT_TESTSCRIPTS} \
 	$(JPEG_DEPENDENT_TESTSCRIPTS)
 
 # This list should contain the references files

@@ -1088,6 +1088,45 @@ if test "$CHECK_JPEG_YCBCR_SUBSAMPLING" = "yes" ; then
 fi
 
 dnl ---------------------------------------------------------------------------
+dnl Default handling of packaging options.
+dnl ---------------------------------------------------------------------------
+
+AC_ARG_ENABLE(tiff-build-tools,
+              AS_HELP_STRING([--disable-tiff-build-tools],
+                             [disable building of image manipulation tools]),
+              [LIBTIFF_BUILD_TOOLS=$enableval],
+              [LIBTIFF_BUILD_TOOLS=yes])
+AM_CONDITIONAL(LIBTIFF_BUILD_TOOLS, test "$LIBTIFF_BUILD_TOOLS" = 'yes')
+
+AC_ARG_ENABLE(tiff-build-contrib,
+              AS_HELP_STRING([--disable-tiff-build-contrib],
+                             [disable building of various contributed modules]),
+              [LIBTIFF_BUILD_CONTRIB=$enableval],
+              [LIBTIFF_BUILD_CONTRIB=yes])
+AM_CONDITIONAL(LIBTIFF_BUILD_CONTRIB, test "$LIBTIFF_BUILD_CONTRIB" = 'yes')
+
+AC_ARG_ENABLE(tiff-build-man,
+              AS_HELP_STRING([--disable-tiff-build-man],
+                             [disable building of man pages]),
+              [LIBTIFF_BUILD_MAN=$enableval],
+              [LIBTIFF_BUILD_MAN=yes])
+AM_CONDITIONAL(LIBTIFF_BUILD_MAN, test "$LIBTIFF_BUILD_MAN" = 'yes')
+
+AC_ARG_ENABLE(tiff-build-html,
+              AS_HELP_STRING([--disable-tiff-build-html],
+                             [disable building of HTML documentation]),
+              [LIBTIFF_BUILD_HTML=$enableval],
+              [LIBTIFF_BUILD_HTML=yes])
+AM_CONDITIONAL(LIBTIFF_BUILD_HTML, test "$LIBTIFF_BUILD_HTML" = 'yes')
+
+AC_ARG_ENABLE(tiff-build-tests,
+              AS_HELP_STRING([--disable-tiff-build-tests],
+                             [disable building and running tests]),
+              [LIBTIFF_BUILD_TESTS=$enableval],
+              [LIBTIFF_BUILD_TESTS=yes])
+AM_CONDITIONAL(LIBTIFF_BUILD_TESTS, test "$LIBTIFF_BUILD_TESTS" = 'yes')
+
+dnl ---------------------------------------------------------------------------
 
 AC_SUBST(LIBDIR)
 
@@ -1095,26 +1134,37 @@ AC_CONFIG_HEADERS([config/config.h libtiff/tif_config.h libtiff/tiffconf.h port/
 
 AC_CONFIG_FILES([Makefile \
 		 build/Makefile \
-		 contrib/Makefile \
-		 contrib/addtiffo/Makefile \
-		 contrib/dbs/Makefile \
-		 contrib/dbs/xtiff/Makefile \
-		 contrib/iptcutil/Makefile \
-		 contrib/mfs/Makefile \
-		 contrib/pds/Makefile \
-		 contrib/ras/Makefile \
-		 contrib/stream/Makefile \
-		 contrib/tags/Makefile \
-		 contrib/win_dib/Makefile \
-		 html/Makefile \
-		 html/images/Makefile \
-		 html/man/Makefile \
 		 libtiff-4.pc \
 		 libtiff/Makefile \
-		 man/Makefile \
-		 port/Makefile \
-		 test/Makefile \
-		 tools/Makefile])
+		 port/Makefile])
+
+AM_COND_IF([LIBTIFF_BUILD_TOOLS],
+           [AC_CONFIG_FILES([tools/Makefile])])
+
+AM_COND_IF([LIBTIFF_BUILD_CONTRIB],
+           [AC_CONFIG_FILES([contrib/Makefile \
+                             contrib/addtiffo/Makefile \
+                             contrib/dbs/Makefile \
+                             contrib/dbs/xtiff/Makefile \
+                             contrib/iptcutil/Makefile \
+                             contrib/mfs/Makefile \
+                             contrib/pds/Makefile \
+                             contrib/ras/Makefile \
+                             contrib/stream/Makefile \
+                             contrib/tags/Makefile \
+                             contrib/win_dib/Makefile])])
+
+AM_COND_IF([LIBTIFF_BUILD_MAN],
+           [AC_CONFIG_FILES([man/Makefile])])
+
+AM_COND_IF([LIBTIFF_BUILD_HTML],
+           [AC_CONFIG_FILES([html/Makefile \
+                             html/images/Makefile \
+                             html/man/Makefile])])
+
+AM_COND_IF([LIBTIFF_BUILD_TESTS],
+           [AC_CONFIG_FILES([test/Makefile])])
+
 AC_OUTPUT
 
 dnl ---------------------------------------------------------------------------
