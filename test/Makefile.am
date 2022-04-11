@@ -184,7 +184,8 @@ TIFFIMAGES = \
 	images/ojpeg_chewey_subsamp21_multi_strip.tiff \
 	images/ojpeg_single_strip_no_rowsperstrip.tiff \
 	images/testfax4.tiff \
-	images/deflate-last-strip-extra-data.tiff
+	images/deflate-last-strip-extra-data.tiff \
+	images/custom_dir_EXIF_GPS.tiff
 
 PNMIMAGES = \
 	images/minisblack-1c-8b.pgm \
@@ -198,6 +199,8 @@ PNMIMAGES = \
 IMAGES_EXTRA_DIST = \
 	images/README.txt \
 	images/miniswhite-1c-1b.g3 \
+	images/test_float64_predictor2_le_lzw.tif \
+	images/test_float64_predictor2_be_lzw.tif \
 	$(PNMIMAGES) \
 	$(TIFFIMAGES)
 

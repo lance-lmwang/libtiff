@@ -1822,8 +1822,11 @@ void t2p_read_tiff_data(T2P* t2p, TIFF* input){
 				uint16_t predictor;
 				t2p->pdf_transcode = T2P_TRANSCODE_RAW;
 				t2p->pdf_compression=T2P_COMPRESS_ZIP;
-				TIFFGetField(input, TIFFTAG_PREDICTOR, &predictor);
-				t2p->pdf_compressionquality = predictor;
+				if (TIFFGetField(input, TIFFTAG_PREDICTOR, &predictor)) {
+					t2p->pdf_compressionquality = predictor;
+				} else {
+					t2p->pdf_compressionquality = PREDICTOR_NONE;
+				}
 				/* TIFFTAG_ZIPQUALITY is always Z_DEFAULT_COMPRESSION on reading */
 			}
 		}
@@ -1991,7 +1994,13 @@ void t2p_read_tiff_size(T2P* t2p, TIFF* input){
 		if(t2p->pdf_compression == T2P_COMPRESS_ZIP)
 #endif
 		{
-			TIFFGetField(input, TIFFTAG_STRIPBYTECOUNTS, &sbc);
+			if(!TIFFGetField(input, TIFFTAG_STRIPBYTECOUNTS, &sbc)){
+				TIFFError(TIFF2PDF_MODULE, 
+					"Input file %s missing field: TIFFTAG_STRIPBYTECOUNTS",
+					TIFFFileName(input));
+				t2p->t2p_error = T2P_ERR_ERROR;
+				return;
+			}
 			t2p_set_tiff_datasize(t2p, sbc[0]);
 			return;
 		}
