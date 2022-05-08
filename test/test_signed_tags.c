@@ -184,7 +184,6 @@ static int readTestTiff(const char* szFileName, int isBigTiff)
 		return (FAULT_RETURN);
 	}
 
-//////  	isBigTiff = (tif->tif_header.common.tiff_version == 42 ? 0 : 1);
 
 	ret = TIFFGetField(tif, SINT8, &s8l);
 	if (ret != 1) {
