@@ -193,43 +193,20 @@ endif()
 set(TEST_OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/output")
 file(MAKE_DIRECTORY "${TEST_OUTPUT}")
 
-set(tiff_test_extra_args
-    "-DTIFFCP=$<TARGET_FILE:tiffcp>"
-    "-DTIFFINFO=$<TARGET_FILE:tiffinfo>"
-    "-DTIFFSPLIT=$<TARGET_FILE:tiffsplit>"
-    "-DLIBTIFF=$<TARGET_FILE:tiff>")
+set(tiff_test_extra_args "-DLIBTIFF=$<TARGET_FILE:tiff>")
+
+if(LIBTIFF_BUILD_TOOLS)
+  list(APPEND tiff_test_extra_args "-DTIFFCP=$<TARGET_FILE:tiffcp>")
+  list(APPEND tiff_test_extra_args "-DTIFFINFO=$<TARGET_FILE:tiffinfo>")
+  list(APPEND tiff_test_extra_args "-DTIFFSPLIT=$<TARGET_FILE:tiffsplit>")
+endif()
+
 if(WIN32)
   list(APPEND tiff_test_extra_args "-DWIN32=${WIN32}")
 endif()
 if(CYGWIN)
   list(APPEND tiff_test_extra_args "-DCYGWIN=${CYGWIN}")
 endif()
-
-function(tiff_test_convert name command1 command2 command3 infile outfile validate)
-  add_test(NAME "${name}"
-           COMMAND "${CMAKE_COMMAND}"
-           "-DCONVERT_COMMAND1=${command1}"
-           "-DCONVERT_COMMAND2=${command2}"
-           "-DCONVERT_COMMAND3=${command3}"
-           "-DINFILE=${infile}"
-           "-DOUTFILE=${outfile}"
-           "-DVALIDATE=${validate}"
-           ${tiff_test_extra_args}
-           -P "${CMAKE_CURRENT_SOURCE_DIR}/TiffTest.cmake")
-endfunction()
-
-function(tiff_test_stdout name suffix command infile outfile)
-  if (suffix)
-     set(name "${name}-${suffix}")
-  endif()
-  add_test(NAME "${name}"
-           COMMAND "${CMAKE_COMMAND}"
-           "-DSTDOUT_COMMAND=${command}"
-           "-DINFILE=${infile}"
-           "-DOUTFILE=${outfile}"
-           ${tiff_test_extra_args}
-           -P "${CMAKE_CURRENT_SOURCE_DIR}/TiffTest.cmake")
-endfunction()
 
 function(tiff_test_stdout_noargs name command)
   add_test(NAME "${name}"
@@ -240,174 +217,202 @@ function(tiff_test_stdout_noargs name command)
           WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 endfunction()
 
-function(tiff_test_reader name command infile)
-  add_test(NAME "${name}"
-           COMMAND "${CMAKE_COMMAND}"
-           "-DREADER_COMMAND=${command}"
-           "-DINFILE=${infile}"
-           ${tiff_test_extra_args}
-           -P "${CMAKE_CURRENT_SOURCE_DIR}/TiffTest.cmake")
-endfunction()
-
-function(add_convert_test_multi commandname1 commandname2 commandname3
-      categoryname commandargs1 commandargs2 commandargs3
-      image validate)
-  string(REPLACE " " "^" escaped_commandargs1 "${commandargs1}")
-  string(REPLACE " " "^" escaped_commandargs2 "${commandargs2}")
-  string(REPLACE " " "^" escaped_commandargs3 "${commandargs3}")
-  get_filename_component(name "${image}" NAME)
-  get_filename_component(base "${image}" NAME_WE)
-  set(testname "${commandname1}-${categoryname}-${base}")
-  if(commandname1)
-    set(command1
-        "$<TARGET_FILE:${commandname1}>^${escaped_commandargs1}")
-  else()
-    set(command1)
-  endif()
-  if(commandname2)
-    set(command2
-        "$<TARGET_FILE:${commandname2}>^${escaped_commandargs2}")
-  else()
-    set(command2)
-  endif()
-  if(commandname3)
-    set(command3
-        "$<TARGET_FILE:${commandname3}>^${escaped_commandargs3}")
-  else()
-    set(command3)
-  endif()
-  set(infile "${CMAKE_CURRENT_SOURCE_DIR}/${image}")
-  set(outfile "${TEST_OUTPUT}/${commandname1}-${categoryname}-${base}.tiff")
-  tiff_test_convert("${testname}" "${command1}" "${command2}" "${command3}"
-                    "${infile}" "${outfile}" "${validate}")
-endfunction()
-
-function(add_convert_test commandname
-      categoryname commandargs
-      image validate)
-    add_convert_test_multi("${commandname}" "" ""
-                           "${categoryname}" "${commandargs}" "" ""
-                           "${image}" "${validate}")
-endfunction()
-
-function(add_convert_tests_multi commandname1 commandname2 commandname3
-      categoryname
-      commandargs1 commandargs2 commandargs3
-      images validate)
-  foreach(file ${${images}})
-    add_convert_test_multi("${commandname1}" "${commandname2}"
-                           "${commandname3}" "${categoryname}"
-                           "${commandargs1}" "${commandargs2}"
-                           "${commandargs3}" "${file}" "${validate}")
-  endforeach()
-endfunction()
-
-function(add_convert_tests commandname categoryname commandargs images validate)
-  foreach(file ${${images}})
-    add_convert_test("${commandname}" "${categoryname}"
-                     "${commandargs}" "${file}" "${validate}")
-  endforeach()
-endfunction()
-
-function(add_stdout_test commandname suffix commandargs image)
-  string(REPLACE " " "^" escaped_commandargs "${commandargs}")
-  get_filename_component(name "${image}" NAME)
-  get_filename_component(base "${image}" NAME_WE)
-  set(testname "${commandname}-${base}")
-  set(command "$<TARGET_FILE:${commandname}>^${escaped_commandargs}")
-  set(infile "${CMAKE_CURRENT_SOURCE_DIR}/${image}")
-  set(outfile "${TEST_OUTPUT}/${commandname}-${name}")
-  string(REGEX REPLACE "\\.tiff\$" "" name "${name}")
-  tiff_test_stdout("${testname}" "${suffix}" "${command}" "${infile}" "${outfile}")
-endfunction()
-
-function(add_reader_test commandname commandargs image)
-  string(REPLACE " " "^" escaped_commandargs "${commandargs}")
-  get_filename_component(name "${image}" NAME)
-  get_filename_component(base "${image}" NAME_WE)
-  set(testname "${commandname}-${base}")
-  set(command "$<TARGET_FILE:${commandname}>^${escaped_commandargs}")
-  set(infile "${CMAKE_CURRENT_SOURCE_DIR}/${image}")
-  tiff_test_reader("${testname}" "${command}" "${infile}")
-endfunction()
-
 # Plain executables with no arguments
 foreach(target IN LISTS simple_tests)
   tiff_test_stdout_noargs("${target}" "${target}")
 endforeach()
 
+if(LIBTIFF_BUILD_TOOLS)
+  function(tiff_test_convert name command1 command2 command3 infile outfile validate)
+    add_test(NAME "${name}"
+            COMMAND "${CMAKE_COMMAND}"
+            "-DCONVERT_COMMAND1=${command1}"
+            "-DCONVERT_COMMAND2=${command2}"
+            "-DCONVERT_COMMAND3=${command3}"
+            "-DINFILE=${infile}"
+            "-DOUTFILE=${outfile}"
+            "-DVALIDATE=${validate}"
+            ${tiff_test_extra_args}
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/TiffTest.cmake")
+  endfunction()
 
-# PPM
-add_convert_test(ppm2tiff miniswhite "" "images/miniswhite-1c-1b.pbm" TRUE)
-add_convert_test(ppm2tiff minisblack "" "images/minisblack-1c-8b.pgm" TRUE)
-add_convert_test(ppm2tiff rgb        "" "images/rgb-3c-16b.ppm"       TRUE)
-add_convert_test(ppm2tiff rgb        "" "images/rgb-3c-8b.ppm"        TRUE)
+  function(tiff_test_stdout name suffix command infile outfile)
+    if (suffix)
+      set(name "${name}-${suffix}")
+    endif()
+    add_test(NAME "${name}"
+            COMMAND "${CMAKE_COMMAND}"
+            "-DSTDOUT_COMMAND=${command}"
+            "-DINFILE=${infile}"
+            "-DOUTFILE=${outfile}"
+            ${tiff_test_extra_args}
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/TiffTest.cmake")
+  endfunction()
 
-# tiffcp
-add_convert_test(tiffcp   g3         "-c g3"         "images/miniswhite-1c-1b.tiff" FALSE)
-add_convert_test(tiffcp   g31d       "-c g3:1d"      "images/miniswhite-1c-1b.tiff" FALSE)
-add_convert_test(tiffcp   g31dfill   "-c g3:1d:fill" "images/miniswhite-1c-1b.tiff" FALSE)
-add_convert_test(tiffcp   g32d       "-c g3:2d"      "images/miniswhite-1c-1b.tiff" FALSE)
-add_convert_test(tiffcp   g32dfill   "-c g3:2d:fill" "images/miniswhite-1c-1b.tiff" FALSE)
-add_convert_test(tiffcp   g4         "-c g4"         "images/miniswhite-1c-1b.tiff" FALSE)
-add_convert_test_multi(tiffcp tiffcp "" logluv "-c none" "-c sgilog" ""
-                       "images/logluv-3c-16b.tiff"    FALSE)
-add_convert_test_multi(tiffcp thumbnail "" thumbnail "-c g3:1d" "" ""
-                       "images/miniswhite-1c-1b.tiff"    FALSE)
-add_convert_test(tiffcp   none       "-c none"       "images/quad-lzw-compat.tiff" FALSE)
-add_convert_test(tiffcp   noner1     "-c none -r 1"  "images/lzw-single-strip.tiff" FALSE)
-add_convert_test(tiffcp   float64_lzw_2_le "-c lzw:2"       "images/test_float64_predictor2_le_lzw.tif" FALSE)
-add_convert_test(tiffcp   float64_lzw_2_be "-c lzw:2"       "images/test_float64_predictor2_be_lzw.tif" FALSE)
+  function(tiff_test_reader name command infile)
+    add_test(NAME "${name}"
+            COMMAND "${CMAKE_COMMAND}"
+            "-DREADER_COMMAND=${command}"
+            "-DINFILE=${infile}"
+            ${tiff_test_extra_args}
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/TiffTest.cmake")
+  endfunction()
 
-# tiffdump
-add_reader_test(tiffdump "" "images/miniswhite-1c-1b.tiff")
+  function(add_convert_test_multi commandname1 commandname2 commandname3
+        categoryname commandargs1 commandargs2 commandargs3
+        image validate)
+    string(REPLACE " " "^" escaped_commandargs1 "${commandargs1}")
+    string(REPLACE " " "^" escaped_commandargs2 "${commandargs2}")
+    string(REPLACE " " "^" escaped_commandargs3 "${commandargs3}")
+    get_filename_component(name "${image}" NAME)
+    get_filename_component(base "${image}" NAME_WE)
+    set(testname "${commandname1}-${categoryname}-${base}")
+    if(commandname1)
+      set(command1
+          "$<TARGET_FILE:${commandname1}>^${escaped_commandargs1}")
+    else()
+      set(command1)
+    endif()
+    if(commandname2)
+      set(command2
+          "$<TARGET_FILE:${commandname2}>^${escaped_commandargs2}")
+    else()
+      set(command2)
+    endif()
+    if(commandname3)
+      set(command3
+          "$<TARGET_FILE:${commandname3}>^${escaped_commandargs3}")
+    else()
+      set(command3)
+    endif()
+    set(infile "${CMAKE_CURRENT_SOURCE_DIR}/${image}")
+    set(outfile "${TEST_OUTPUT}/${commandname1}-${categoryname}-${base}.tiff")
+    tiff_test_convert("${testname}" "${command1}" "${command2}" "${command3}"
+                      "${infile}" "${outfile}" "${validate}")
+  endfunction()
 
-# tiffinfo
-add_reader_test(tiffinfo "-c -D -d -j -s" "images/custom_dir_EXIF_GPS.tiff")
-add_reader_test(tiffinfo "-c -D -d -j -s" "images/minisblack-1c-16b.tiff")
+  function(add_convert_test commandname
+        categoryname commandargs
+        image validate)
+      add_convert_test_multi("${commandname}" "" ""
+                            "${categoryname}" "${commandargs}" "" ""
+                            "${image}" "${validate}")
+  endfunction()
 
-# tiffcp split/join
-foreach(image ${UNCOMPRESSEDIMAGES})
-  list(APPEND ESCAPED_UNCOMPRESSED "${CMAKE_CURRENT_SOURCE_DIR}/${image}")
-endforeach()
-string(REPLACE ";" "^" ESCAPED_UNCOMPRESSED "${ESCAPED_UNCOMPRESSED}")
-add_test(NAME "tiffcp-split"
-         COMMAND "${CMAKE_COMMAND}"
-         "-DTESTFILES=${ESCAPED_UNCOMPRESSED}"
-         "-DCONJOINED=${TEST_OUTPUT}/tiffcp-split-conjoined.tiff"
-         "-DSPLITFILE=${TEST_OUTPUT}/tiffcp-split-split-"
-         ${tiff_test_extra_args}
-         -P "${CMAKE_CURRENT_SOURCE_DIR}/TiffSplitTest.cmake")
-add_test(NAME "tiffcp-split-join"
-         COMMAND "${CMAKE_COMMAND}"
-         "-DTESTFILES=${ESCAPED_UNCOMPRESSED}"
-         "-DCONJOINED=${TEST_OUTPUT}/tiffcp-split-join-conjoined.tiff"
-         "-DSPLITFILE=${TEST_OUTPUT}/tiffcp-split-join-split-"
-         "-DRECONJOINED=${TEST_OUTPUT}/tiffcp-split-join-reconjoined.tiff"
-         ${tiff_test_extra_args}
-         -P "${CMAKE_CURRENT_SOURCE_DIR}/TiffSplitTest.cmake")
+  function(add_convert_tests_multi commandname1 commandname2 commandname3
+        categoryname
+        commandargs1 commandargs2 commandargs3
+        images validate)
+    foreach(file ${${images}})
+      add_convert_test_multi("${commandname1}" "${commandname2}"
+                            "${commandname3}" "${categoryname}"
+                            "${commandargs1}" "${commandargs2}"
+                            "${commandargs3}" "${file}" "${validate}")
+    endforeach()
+  endfunction()
 
-# PDF
-add_stdout_test(tiff2pdf "" "" "images/miniswhite-1c-1b.tiff" TRUE)
+  function(add_convert_tests commandname categoryname commandargs images validate)
+    foreach(file ${${images}})
+      add_convert_test("${commandname}" "${categoryname}"
+                      "${commandargs}" "${file}" "${validate}")
+    endforeach()
+  endfunction()
 
-# PS
-add_stdout_test(tiff2ps "ps-1" "-a -p -1" "images/miniswhite-1c-1b.tiff" TRUE)
-add_stdout_test(tiff2ps "ps-2" "-a -p -2" "images/miniswhite-1c-1b.tiff" TRUE)
-add_stdout_test(tiff2ps "ps-3" "-a -p -3" "images/miniswhite-1c-1b.tiff" TRUE)
-add_stdout_test(tiff2ps "eps-1" "-e -1" "images/miniswhite-1c-1b.tiff" TRUE)
+  function(add_stdout_test commandname suffix commandargs image)
+    string(REPLACE " " "^" escaped_commandargs "${commandargs}")
+    get_filename_component(name "${image}" NAME)
+    get_filename_component(base "${image}" NAME_WE)
+    set(testname "${commandname}-${base}")
+    set(command "$<TARGET_FILE:${commandname}>^${escaped_commandargs}")
+    set(infile "${CMAKE_CURRENT_SOURCE_DIR}/${image}")
+    set(outfile "${TEST_OUTPUT}/${commandname}-${name}")
+    string(REGEX REPLACE "\\.tiff\$" "" name "${name}")
+    tiff_test_stdout("${testname}" "${suffix}" "${command}" "${infile}" "${outfile}")
+  endfunction()
 
-# BW
-add_convert_tests(tiff2bw default      ""                         RGBIMAGES TRUE)
+  function(add_reader_test commandname commandargs image)
+    string(REPLACE " " "^" escaped_commandargs "${commandargs}")
+    get_filename_component(name "${image}" NAME)
+    get_filename_component(base "${image}" NAME_WE)
+    set(testname "${commandname}-${base}")
+    set(command "$<TARGET_FILE:${commandname}>^${escaped_commandargs}")
+    set(infile "${CMAKE_CURRENT_SOURCE_DIR}/${image}")
+    tiff_test_reader("${testname}" "${command}" "${infile}")
+  endfunction()
 
-# RGBA
-add_convert_tests(tiff2rgba default    ""                         TIFFIMAGES TRUE)
-# RGBA (old-jpeg)
-add_convert_tests(tiff2rgba default    ""                         TIFFIMAGES_OJPEG TRUE)
-# Test rotations
-add_convert_tests(tiffcrop  R90        "-R90"                     TIFFIMAGES TRUE)
-# Test flip (mirror)
-add_convert_tests(tiffcrop  doubleflip "-F both"                  TIFFIMAGES TRUE)
-# Test extracting a section 60 pixels wide and 60 pixels high
-add_convert_tests(tiffcrop  extract    "-U px -E top -X 60 -Y 60" TIFFIMAGES TRUE)
-# Test extracting the first and fourth quarters from the left side.
-add_convert_tests(tiffcrop  extractz14 "-E left -Z1:4,2:4"        TIFFIMAGES TRUE)
+
+  # PPM
+  add_convert_test(ppm2tiff miniswhite "" "images/miniswhite-1c-1b.pbm" TRUE)
+  add_convert_test(ppm2tiff minisblack "" "images/minisblack-1c-8b.pgm" TRUE)
+  add_convert_test(ppm2tiff rgb        "" "images/rgb-3c-16b.ppm"       TRUE)
+  add_convert_test(ppm2tiff rgb        "" "images/rgb-3c-8b.ppm"        TRUE)
+
+  # tiffcp
+  add_convert_test(tiffcp   g3         "-c g3"         "images/miniswhite-1c-1b.tiff" FALSE)
+  add_convert_test(tiffcp   g31d       "-c g3:1d"      "images/miniswhite-1c-1b.tiff" FALSE)
+  add_convert_test(tiffcp   g31dfill   "-c g3:1d:fill" "images/miniswhite-1c-1b.tiff" FALSE)
+  add_convert_test(tiffcp   g32d       "-c g3:2d"      "images/miniswhite-1c-1b.tiff" FALSE)
+  add_convert_test(tiffcp   g32dfill   "-c g3:2d:fill" "images/miniswhite-1c-1b.tiff" FALSE)
+  add_convert_test(tiffcp   g4         "-c g4"         "images/miniswhite-1c-1b.tiff" FALSE)
+  add_convert_test_multi(tiffcp tiffcp "" logluv "-c none" "-c sgilog" ""
+                        "images/logluv-3c-16b.tiff"    FALSE)
+  add_convert_test_multi(tiffcp thumbnail "" thumbnail "-c g3:1d" "" ""
+                        "images/miniswhite-1c-1b.tiff"    FALSE)
+  add_convert_test(tiffcp   none       "-c none"       "images/quad-lzw-compat.tiff" FALSE)
+  add_convert_test(tiffcp   noner1     "-c none -r 1"  "images/lzw-single-strip.tiff" FALSE)
+  add_convert_test(tiffcp   float64_lzw_2_le "-c lzw:2"       "images/test_float64_predictor2_le_lzw.tif" FALSE)
+  add_convert_test(tiffcp   float64_lzw_2_be "-c lzw:2"       "images/test_float64_predictor2_be_lzw.tif" FALSE)
+
+  # tiffdump
+  add_reader_test(tiffdump "" "images/miniswhite-1c-1b.tiff")
+
+  # tiffinfo
+  add_reader_test(tiffinfo "-c -D -d -j -s" "images/custom_dir_EXIF_GPS.tiff")
+  add_reader_test(tiffinfo "-c -D -d -j -s" "images/minisblack-1c-16b.tiff")
+
+  # tiffcp split/join
+  foreach(image ${UNCOMPRESSEDIMAGES})
+    list(APPEND ESCAPED_UNCOMPRESSED "${CMAKE_CURRENT_SOURCE_DIR}/${image}")
+  endforeach()
+  string(REPLACE ";" "^" ESCAPED_UNCOMPRESSED "${ESCAPED_UNCOMPRESSED}")
+  add_test(NAME "tiffcp-split"
+          COMMAND "${CMAKE_COMMAND}"
+          "-DTESTFILES=${ESCAPED_UNCOMPRESSED}"
+          "-DCONJOINED=${TEST_OUTPUT}/tiffcp-split-conjoined.tiff"
+          "-DSPLITFILE=${TEST_OUTPUT}/tiffcp-split-split-"
+          ${tiff_test_extra_args}
+          -P "${CMAKE_CURRENT_SOURCE_DIR}/TiffSplitTest.cmake")
+  add_test(NAME "tiffcp-split-join"
+          COMMAND "${CMAKE_COMMAND}"
+          "-DTESTFILES=${ESCAPED_UNCOMPRESSED}"
+          "-DCONJOINED=${TEST_OUTPUT}/tiffcp-split-join-conjoined.tiff"
+          "-DSPLITFILE=${TEST_OUTPUT}/tiffcp-split-join-split-"
+          "-DRECONJOINED=${TEST_OUTPUT}/tiffcp-split-join-reconjoined.tiff"
+          ${tiff_test_extra_args}
+          -P "${CMAKE_CURRENT_SOURCE_DIR}/TiffSplitTest.cmake")
+
+  # PDF
+  add_stdout_test(tiff2pdf "" "" "images/miniswhite-1c-1b.tiff" TRUE)
+
+  # PS
+  add_stdout_test(tiff2ps "ps-1" "-a -p -1" "images/miniswhite-1c-1b.tiff" TRUE)
+  add_stdout_test(tiff2ps "ps-2" "-a -p -2" "images/miniswhite-1c-1b.tiff" TRUE)
+  add_stdout_test(tiff2ps "ps-3" "-a -p -3" "images/miniswhite-1c-1b.tiff" TRUE)
+  add_stdout_test(tiff2ps "eps-1" "-e -1" "images/miniswhite-1c-1b.tiff" TRUE)
+
+  # BW
+  add_convert_tests(tiff2bw default      ""                         RGBIMAGES TRUE)
+
+  # RGBA
+  add_convert_tests(tiff2rgba default    ""                         TIFFIMAGES TRUE)
+  # RGBA (old-jpeg)
+  add_convert_tests(tiff2rgba default    ""                         TIFFIMAGES_OJPEG TRUE)
+  # Test rotations
+  add_convert_tests(tiffcrop  R90        "-R90"                     TIFFIMAGES TRUE)
+  # Test flip (mirror)
+  add_convert_tests(tiffcrop  doubleflip "-F both"                  TIFFIMAGES TRUE)
+  # Test extracting a section 60 pixels wide and 60 pixels high
+  add_convert_tests(tiffcrop  extract    "-U px -E top -X 60 -Y 60" TIFFIMAGES TRUE)
+  # Test extracting the first and fourth quarters from the left side.
+  add_convert_tests(tiffcrop  extractz14 "-E left -Z1:4,2:4"        TIFFIMAGES TRUE)
+endif()

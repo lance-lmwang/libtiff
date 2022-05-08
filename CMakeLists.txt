@@ -77,7 +77,7 @@ include(GNUInstallDirs)
 set(LIBTIFF_DOCDIR "${CMAKE_INSTALL_DOCDIR}")
 
 # CTest testing
-enable_testing()
+include(CTest)
 
 # Checks for type presence and size
 include(TypeSizeChecks)
@@ -124,23 +124,38 @@ include(WindowsSupport)
 # Orthogonal features
 include(LibraryFeatures)
 
-
 # math.h/libm portability
 find_package(CMath REQUIRED)
 
 # Release support
 include(Release)
 
+# Packaging options
+include(Packaging)
 
 # Process subdirectories
 add_subdirectory(port)
 add_subdirectory(libtiff)
-add_subdirectory(tools)
-add_subdirectory(test)
-add_subdirectory(contrib)
-add_subdirectory(build)
-add_subdirectory(man)
-add_subdirectory(html)
+
+if(LIBTIFF_BUILD_TOOLS)
+  add_subdirectory(tools)
+endif()
+
+if(LIBTIFF_BUILD_CONTRIB)
+  add_subdirectory(contrib)
+endif()
+
+if(LIBTIFF_BUILD_MAN)
+  add_subdirectory(man)
+endif()
+
+if(LIBTIFF_BUILD_HTML)
+  add_subdirectory(html)
+endif()
+
+if(BUILD_TESTING)
+  add_subdirectory(test)
+endif()
 
 # pkg-config support
 include(PkgConfig)

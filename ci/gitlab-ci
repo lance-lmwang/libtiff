@@ -12,8 +12,8 @@ autoconf_build()
 
     mkdir autoconf-build
     cd autoconf-build
-    echo "Running ../configure --prefix=$(pwd)/../autoconf-install) ${opts}"
-    ../configure --prefix=$(pwd)/../autoconf-install ${opts}
+    echo "Running ../configure --prefix=$(pwd)/../autoconf-install) ${opts} $@"
+    ../configure --prefix=$(pwd)/../autoconf-install ${opts} "$@"
     make
     make install
     make check
@@ -30,8 +30,14 @@ cmake_build()
     mkdir cmake-build
     cd cmake-build
     opts="-Dfatal-warnings=ON"
-    echo "Running cmake -G "$1" -DCMAKE_BUILD_TYPE="$2" -DCMAKE_INSTALL_PREFIX=../cmake-install ${opts} .."
-    cmake -G "$1" -DCMAKE_BUILD_TYPE="$2" -DCMAKE_INSTALL_PREFIX=../cmake-install ${opts} ..
+    generator="$1"
+    build_type="$2"
+    # Shift arguments so that additional arguments
+    # can be given to the build
+    shift
+    shift
+    echo "Running cmake -G "$generator" -DCMAKE_BUILD_TYPE="$build_type" -DCMAKE_INSTALL_PREFIX=../cmake-install ${opts} $@ .."
+    cmake -G "$generator" -DCMAKE_BUILD_TYPE="$build_type" -DCMAKE_INSTALL_PREFIX=../cmake-install ${opts} "$@" ..
     $COVERITY_BUILD cmake --build .
     cmake --build . --target install
     ctest -V

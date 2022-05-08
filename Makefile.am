@@ -58,7 +58,27 @@ distcheck-hook:
 	rm -rf $(distdir)/_build/cmake
 	rm -rf $(distdir)/_inst/cmake
 
-SUBDIRS = port libtiff tools build contrib test man html
+if LIBTIFF_BUILD_TOOLS
+  MAYBE_TOOLS=tools
+endif
+
+if LIBTIFF_BUILD_CONTRIB
+  MAYBE_CONTRIB=contrib
+endif
+
+if LIBTIFF_BUILD_MAN
+  MAYBE_MAN=man
+endif
+
+if LIBTIFF_BUILD_HTML
+  MAYBE_HTML=html
+endif
+
+if LIBTIFF_BUILD_TESTS
+  MAYBE_TEST=test
+endif
+
+SUBDIRS = port libtiff $(MAYBE_TOOLS) $(MAYBE_CONTRIB) $(MAYBE_MAN) $(MAYBE_HTML) $(MAYBE_TESTS)
 
 release:
 	(rm -f $(top_srcdir)/RELEASE-DATE && echo $(LIBTIFF_RELEASE_DATE) > $(top_srcdir)/RELEASE-DATE)

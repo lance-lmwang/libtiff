@@ -8,25 +8,41 @@ stages:
 autoconf:
   stage: build
   script:
-    - sh build/gitlab-ci autoconf
+    - sh ci/gitlab-ci autoconf
+  after_script:
+    - 'cat autoconf-build/test/test-suite.log'
+
+autoconf-library-only:
+  stage: build
+  script:
+    - sh ci/gitlab-ci autoconf
+      --disable-tiff-tools --disable-tiff-contrib --disable-tiff-man
+      --disable-tiff-html --disable-tiff-tests
   after_script:
     - 'cat autoconf-build/test/test-suite.log'
 
 cmake-makefiles:
   stage: build
   script:
-    - sh build/gitlab-ci cmake "Unix Makefiles" Release
+    - sh ci/gitlab-ci cmake "Unix Makefiles" Release
 
 cmake-ninja:
   stage: build
   script:
-    - sh build/gitlab-ci cmake "Ninja" Debug
+    - sh ci/gitlab-ci cmake "Ninja" Debug
+
+cmake-library-only:
+  stage: build
+  script:
+    - sh ci/gitlab-ci cmake "Ninja" Release
+      -DLIBTIFF_BUILD_TOOLS=OFF -DLIBTIFF_BUILD_CONTRIB=OFF
+      -DLIBTIFF_BUILD_MAN=OFF -DLIBTIFF_BUILD_HTML=OFF
 
 cmake-ninja-arm64:
   tags: [arm64,freebsd]
   stage: build
   script:
-    - sh build/gitlab-ci cmake "Ninja" Release
+    - sh ci/gitlab-ci cmake "Ninja" Release
   rules:
     - if: '$CI_PROJECT_PATH == "libtiff/libtiff"'
 
@@ -34,7 +50,7 @@ coverity:
   stage: static-analysis
   image: registry.gitlab.com/libtiff/libtiff-ci-ubuntu20.04-coverity:latest
   script:
-    - sh build/gitlab-ci coverity "Ninja" Debug
+    - sh ci/gitlab-ci coverity "Ninja" Debug
   only:
     refs:
       - master
