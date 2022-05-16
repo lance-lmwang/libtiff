@@ -3335,11 +3335,11 @@ tsize_t t2p_readwrite_pdf_image_tile(T2P* t2p, TIFF* input, TIFF* output, ttile_
 #ifdef OJPEG_SUPPORT
 int t2p_process_ojpeg_tables(T2P* t2p, TIFF* input){
 	uint16_t proc=0;
-	void* q;
+	uint64_t* q;
 	uint32_t q_count=0;
-	void* dc;
+	uint64_t* dc;
 	uint32_t dc_count=0;
-	void* ac;
+	uint64_t* ac;
 	uint32_t ac_count=0;
 	uint16_t* lp;
 	uint16_t* pt;
@@ -3347,7 +3347,6 @@ int t2p_process_ojpeg_tables(T2P* t2p, TIFF* input){
 	uint16_t v_samp=1;
 	unsigned char* ojpegdata;
 	uint16_t table_count;
-	uint32_t offset_table;
 	uint32_t offset_ms_l;
 	uint32_t code_count;
 	uint32_t i=0;
@@ -3485,33 +3484,53 @@ int t2p_process_ojpeg_tables(T2P* t2p, TIFF* input){
 		ojpegdata[t2p->pdf_ojpegdatalength++]=0x00;
 		ojpegdata[t2p->pdf_ojpegdatalength++]=0x43;
 		ojpegdata[t2p->pdf_ojpegdatalength++]=dest;
-		_TIFFmemcpy( &(ojpegdata[t2p->pdf_ojpegdatalength++]), 
-			&(((unsigned char*)q)[64*dest]), 64);
+
+		if (TIFFSeekFile(input, q[dest], SEEK_SET) == (toff_t)-1) {
+			t2p->t2p_error = T2P_ERR_ERROR;
+			return(0);
+		}
+		if (TIFFReadFile(input, &(ojpegdata[t2p->pdf_ojpegdatalength]), 64) != 64) {
+			t2p->t2p_error = T2P_ERR_ERROR;
+			return(0);
+		}
+
 		t2p->pdf_ojpegdatalength+=64;
 	}
-	offset_table=0;
 	for(dest=0;dest<table_count;dest++){
 		ojpegdata[t2p->pdf_ojpegdatalength++]=0xff;
 		ojpegdata[t2p->pdf_ojpegdatalength++]=0xc4;
 		offset_ms_l=t2p->pdf_ojpegdatalength;
 		t2p->pdf_ojpegdatalength+=2;
 		ojpegdata[t2p->pdf_ojpegdatalength++]=dest & 0x0f;
-		_TIFFmemcpy( &(ojpegdata[t2p->pdf_ojpegdatalength]), 
-			&(((unsigned char*)dc)[offset_table]), 16);
+
+		if (TIFFSeekFile(input, dc[dest], SEEK_SET) == (toff_t)-1) {
+			t2p->t2p_error = T2P_ERR_ERROR;
+			return(0);
+		}
+		if (TIFFReadFile(input, &(ojpegdata[t2p->pdf_ojpegdatalength]), 16) != 16) {
+			t2p->t2p_error = T2P_ERR_ERROR;
+			return(0);
+		}
+
 		code_count=0;
-		offset_table+=16;
 		for(i=0;i<16;i++){
 			code_count+=ojpegdata[t2p->pdf_ojpegdatalength++];
 		}
 		ojpegdata[offset_ms_l]=((19+code_count)>>8) & 0xff;
 		ojpegdata[offset_ms_l+1]=(19+code_count) & 0xff;
-		_TIFFmemcpy( &(ojpegdata[t2p->pdf_ojpegdatalength]), 
-			&(((unsigned char*)dc)[offset_table]), code_count);
-		offset_table+=code_count;
+
+		if (TIFFSeekFile(input, dc[dest] + 16, SEEK_SET) == (toff_t)-1) {
+			t2p->t2p_error = T2P_ERR_ERROR;
+			return(0);
+		}
+		if (TIFFReadFile(input, &(ojpegdata[t2p->pdf_ojpegdatalength]), code_count) != code_count) {
+			t2p->t2p_error = T2P_ERR_ERROR;
+			return(0);
+		}
+
 		t2p->pdf_ojpegdatalength+=code_count;
 	}
 	if(proc==JPEGPROC_BASELINE){
-	offset_table=0;
 		for(dest=0;dest<table_count;dest++){
 			ojpegdata[t2p->pdf_ojpegdatalength++]=0xff;
 			ojpegdata[t2p->pdf_ojpegdatalength++]=0xc4;
@@ -3519,18 +3538,32 @@ int t2p_process_ojpeg_tables(T2P* t2p, TIFF* input){
 			t2p->pdf_ojpegdatalength+=2;
 			ojpegdata[t2p->pdf_ojpegdatalength] |= 0x10;
 			ojpegdata[t2p->pdf_ojpegdatalength++] |=dest & 0x0f;
-			_TIFFmemcpy( &(ojpegdata[t2p->pdf_ojpegdatalength]), 
-				&(((unsigned char*)ac)[offset_table]), 16);
+
+			if (TIFFSeekFile(input, ac[dest], SEEK_SET) == (toff_t)-1) {
+				t2p->t2p_error = T2P_ERR_ERROR;
+				return(0);
+			}
+			if (TIFFReadFile(input, &(ojpegdata[t2p->pdf_ojpegdatalength]), 16) != 16) {
+				t2p->t2p_error = T2P_ERR_ERROR;
+				return(0);
+			}
+
 			code_count=0;
-			offset_table+=16;
 			for(i=0;i<16;i++){
 				code_count+=ojpegdata[t2p->pdf_ojpegdatalength++];
 			}	
 			ojpegdata[offset_ms_l]=((19+code_count)>>8) & 0xff;
 			ojpegdata[offset_ms_l+1]=(19+code_count) & 0xff;
-			_TIFFmemcpy( &(ojpegdata[t2p->pdf_ojpegdatalength]), 
-				&(((unsigned char*)ac)[offset_table]), code_count);
-			offset_table+=code_count;
+
+			if (TIFFSeekFile(input, ac[dest] + 16, SEEK_SET) == (toff_t)-1) {
+				t2p->t2p_error = T2P_ERR_ERROR;
+				return(0);
+			}
+			if (TIFFReadFile(input, &(ojpegdata[t2p->pdf_ojpegdatalength]), code_count) != code_count) {
+				t2p->t2p_error = T2P_ERR_ERROR;
+				return(0);
+			}
+
 			t2p->pdf_ojpegdatalength+=code_count;
 		}
 	}
