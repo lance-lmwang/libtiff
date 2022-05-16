@@ -3626,6 +3626,7 @@ int t2p_process_jpeg_strip(
         uint32_t height){
 
 	tsize_t i=0;
+	uint16_t src_ri=0;
 
 	while (i < *striplength) {
 		tsize_t datalen;
@@ -3693,13 +3694,9 @@ int t2p_process_jpeg_strip(
 					buffer[*bufferoffset+6]=
                                             (unsigned char) (height & 0xff);
 					*bufferoffset+=datalen+2;
-					/* insert a DRI marker */
-					buffer[(*bufferoffset)++]=0xff;
-					buffer[(*bufferoffset)++]=0xdd;
-					buffer[(*bufferoffset)++]=0x00;
-					buffer[(*bufferoffset)++]=0x04;
-					buffer[(*bufferoffset)++]=(ri >> 8) & 0xff;
-					buffer[(*bufferoffset)++]= ri & 0xff;
+					if (src_ri == 0) {
+						src_ri = ri;
+					}
 				}
 				break;
 			case 0xc4: /* DHT */
@@ -3713,8 +3710,17 @@ int t2p_process_jpeg_strip(
 				break;
 			case 0xda: /* SOS */
 				if(no==0){
-                    if( *bufferoffset + datalen + 2 > buffersize )
+                    if( *bufferoffset + datalen + 2 + 6 > buffersize )
                         return(0);
+					if (src_ri != 0) {
+						/* insert a DRI marker */
+						buffer[(*bufferoffset)++] = 0xff;
+						buffer[(*bufferoffset)++] = 0xdd;
+						buffer[(*bufferoffset)++] = 0x00;
+						buffer[(*bufferoffset)++] = 0x04;
+						buffer[(*bufferoffset)++] = (src_ri >> 8) & 0xff;
+						buffer[(*bufferoffset)++] = src_ri & 0xff;
+					}
 					_TIFFmemcpy(&(buffer[*bufferoffset]), &(strip[i-1]), datalen+2);
 					*bufferoffset+=datalen+2;
 				} else {
@@ -3733,6 +3739,11 @@ int t2p_process_jpeg_strip(
 				_TIFFmemcpy(&(buffer[*bufferoffset]), &(strip[i]), *striplength - i - chop);
 				*bufferoffset+= *striplength - i - chop;
 				return(1);
+			case 0xdd:	/* DRI - Define Restart Interval */
+				if (no == 0) {
+					src_ri = (strip[i + 3] << 8) | (strip[i + 4]);
+				}
+				break;
 			case 0xd8:	/* SOI - start of image */
 			default:
 				/* ignore any other marker */
