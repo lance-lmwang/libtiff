@@ -2474,6 +2474,11 @@ tsize_t t2p_readwrite_pdf_image(T2P* t2p, TIFF* input, TIFF* output){
 					bufferoffset += count - 2;
 				}
 			}
+			else {
+				// insert SOI mark
+				_TIFFmemcpy(buffer, "\xff\xd8", 2);
+				bufferoffset += 2;
+			}
 			stripcount=TIFFNumberOfStrips(input);
 			TIFFGetField(input, TIFFTAG_STRIPBYTECOUNTS, &sbc);
 			for(i=0;i<stripcount;i++){
