@@ -24,6 +24,8 @@
 
 # Process this file with automake to produce Makefile.in.
 
+if ENABLE_HTML
+
 docdir = $(LIBTIFF_DOCDIR)/html
 
 docfiles = \
@@ -98,3 +100,5 @@ SUBDIRS = images man
 
 EXTRA_DIST = \
 	CMakeLists.txt
+
+endif

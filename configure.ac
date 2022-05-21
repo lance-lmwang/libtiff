@@ -331,6 +331,10 @@ AC_ARG_ENABLE(man,
 	[AS_HELP_STRING([--disable-man],[disable man pages])])
 AM_CONDITIONAL(ENABLE_MAN, [test "x$enable_man" != "xno"])
 
+AC_ARG_ENABLE(html,
+	[AS_HELP_STRING([--disable-html],[disable HTML documentation])])
+AM_CONDITIONAL(ENABLE_HTML, [test "x$enable_html" != "xno"])
+
 dnl ---------------------------------------------------------------------------
 dnl Switch on/off internal codecs.
 dnl ---------------------------------------------------------------------------
