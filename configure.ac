@@ -316,12 +316,16 @@ fi
 AC_SUBST(LIBTIFF_DOCDIR)
 
 dnl ---------------------------------------------------------------------------
-dnl Allow disabling tool builds for when people just want the library.
+dnl Allow disabling optional components for when people just want the library.
 dnl ---------------------------------------------------------------------------
 
 AC_ARG_ENABLE(tools,
 	[AS_HELP_STRING([--disable-tools],[disable optional tools])])
 AM_CONDITIONAL(ENABLE_TOOLS, [test "x$enable_tools" != "xno"])
+
+AC_ARG_ENABLE(contrib,
+	[AS_HELP_STRING([--disable-contrib],[disable optional contrib tools])])
+AM_CONDITIONAL(ENABLE_CONTRIB, [test "x$enable_contrib" != "xno"])
 
 dnl ---------------------------------------------------------------------------
 dnl Switch on/off internal codecs.
