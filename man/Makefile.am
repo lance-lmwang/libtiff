@@ -23,6 +23,8 @@
 
 # Process this file with automake to produce Makefile.in.
 
+if ENABLE_MAN
+
 dist_man1_MANS = \
 	fax2ps.1 \
 	fax2tiff.1 \
@@ -92,3 +94,5 @@ dist_man3_MANS = \
 
 EXTRA_DIST = \
 	CMakeLists.txt
+
+endif

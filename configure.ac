@@ -327,6 +327,10 @@ AC_ARG_ENABLE(contrib,
 	[AS_HELP_STRING([--disable-contrib],[disable optional contrib tools])])
 AM_CONDITIONAL(ENABLE_CONTRIB, [test "x$enable_contrib" != "xno"])
 
+AC_ARG_ENABLE(man,
+	[AS_HELP_STRING([--disable-man],[disable man pages])])
+AM_CONDITIONAL(ENABLE_MAN, [test "x$enable_man" != "xno"])
+
 dnl ---------------------------------------------------------------------------
 dnl Switch on/off internal codecs.
 dnl ---------------------------------------------------------------------------
