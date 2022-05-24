@@ -1818,11 +1818,11 @@ DECLAREContigPutFunc(putcontig8bitCIELab16)
 	fromskew = 3;
 	for( ; h > 0; --h) {
 		for (x = w; x > 0; --x) {
-			TIFFCIELabToXYZ(img->cielab,
-					(uint16_t)wp[0] / 257,
-					(int16_t)wp[1] / 256,
-					(int16_t)wp[2] / 256,
-					&X, &Y, &Z);
+			TIFFCIELab16ToXYZ(img->cielab,
+					  (uint16_t)wp[0],
+					  (int16_t)wp[1],
+					  (int16_t)wp[2],
+					  &X, &Y, &Z);
 			TIFFXYZToRGB(img->cielab, X, Y, Z, &r, &g, &b);
 			*cp++ = PACK(r, g, b);
 			wp += 3;
