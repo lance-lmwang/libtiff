@@ -23,6 +23,8 @@
 
 # Process this file with automake to produce Makefile.in.
 
+if ENABLE_TOOLS
+
 LIBPORT = $(top_builddir)/port/libport.la
 LIBTIFF = $(top_builddir)/libtiff/libtiff.la
 
@@ -135,3 +137,5 @@ echo:
 	(echo $(GL_CFLAGS))
 	(echo $(GLU_CFLAGS))
 	(echo $(GLUT_CFLAGS))
+
+endif

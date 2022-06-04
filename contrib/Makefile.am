@@ -22,6 +22,7 @@
 # OF THIS SOFTWARE.
 
 # Process this file with automake to produce Makefile.in.
+if ENABLE_CONTRIB
 
 EXTRA_DIST = \
 	CMakeLists.txt \
@@ -29,3 +30,4 @@ EXTRA_DIST = \
 
 SUBDIRS = addtiffo dbs iptcutil mfs pds ras stream tags win_dib
 
+endif
