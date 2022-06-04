@@ -30,7 +30,7 @@ ACLOCAL_AMFLAGS = -I m4
 
 docfiles = \
 	ChangeLog \
-	LICENSE \
+	LICENSE.md \
 	README.md \
 	RELEASE-DATE \
 	TODO \
