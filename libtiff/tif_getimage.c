@@ -1815,7 +1815,7 @@ DECLAREContigPutFunc(putcontig8bitCIELab16)
 	uint32_t r, g, b;
 	uint16_t *wp = (uint16_t *)pp;
 	(void) y;
-	fromskew = 3;
+	fromskew *= 3;
 	for( ; h > 0; --h) {
 		for (x = w; x > 0; --x) {
 			TIFFCIELab16ToXYZ(img->cielab,
