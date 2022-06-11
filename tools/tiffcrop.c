@@ -5930,7 +5930,7 @@ computeOutputPixelOffsets (struct crop_mask *crop, struct image_data *image,
   if (owidth == 0 || olength == 0)
   {
     TIFFError("computeOutputPixelOffsets", "Integer overflow when calculating the number of pages");
-	  exit(EXIT_FAILURE);
+    exit(EXIT_FAILURE);
   }
 
   /* Compute the number of pages required for Portrait or Landscape */
