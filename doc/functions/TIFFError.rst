@@ -12,10 +12,14 @@ Synopsis
     #include <stdarg.h>
 
 .. c:function:: void TIFFError(const char * module, const char * fmt, ...)
+.. c:function:: void TIFFErrorExt(thandle_t fd, const char* module, const char* fmt, ...)
 
 .. c:type:: void (*TIFFErrorHandler)(const char * module, const char* fmt, va_list ap)
+.. c:type:: void (*TIFFErrorHandlerExt)(thandle_t fd, const char * module, const char* fmt, va_list ap)
 
 .. c:function:: TIFFErrorHandler TIFFSetErrorHandler(TIFFErrorHandler handler)
+.. c:function:: TIFFErrorHandlerExt TIFFSetErrorHandlerExt(TIFFErrorHandlerExt handler)
+
 
 Description
 -----------
@@ -29,10 +33,21 @@ Applications that desire to capture control in the event of an error should
 :c:func:`TIFFSetErrorHandler` to override the default error handler.
 A :c:macro:`NULL` (0) error handling function may be installed to suppress error messages.
 
+The function :c:func:`TIFFErrorExt` provides a file handle in order 
+to write the error message to a file. Often the file handle used is ``tif->tif_clientdata``
+
+Note
+----
+In ``libtiff`` only a default error handler is defined, writing the message to ``stderr``.
+For writing error messages to file, an extra *TIFFErrorHandlerExt* function has to be set.
+:c:func:`TIFFError` and :c:func:`TIFFErrorExt` will try to call both handler functions if defined. 
+However, :c:func:`TIFFErrorExt` will pass "0" as file handle to the extended error handler.
+
 Return values
 -------------
 
-:c:func:`TIFFSetErrorHandler` returns a reference to the previous error handling function.
+:c:func:`TIFFSetErrorHandler` and :c:func:`TIFFSetErrorHandlerExt` returns 
+a reference to the previous error handling function.
 
 See also
 --------

@@ -28,11 +28,15 @@ Synopsis
 
 .. c:function:: int TIFFIsTiled(TIFF* tif)
 
+.. c:function:: int TIFFIsBigEndian(TIFF* tif)
+
+.. c:function:: int TIFFIsBigTIFF(TIFF* tif)
+
 .. c:function:: int TIFFIsByteSwapped(TIFF* tif)
 
-.. c:function:: int TIFFIsUpSampled(TIFF* tif)
-
 .. c:function:: int TIFFIsMSB2LSB(TIFF* tif)
+
+.. c:function:: int TIFFIsUpSampled(TIFF* tif)
 
 .. c:function:: const char* TIFFGetVersion(void)
 
@@ -44,6 +48,7 @@ The following routines return status information about an open TIFF file.
 :c:func:`TIFFCurrentDirectory` returns the index of the current directory
 (directories are numbered starting at 0). This number is suitable for use
 with the :c:func:`TIFFSetDirectory` routine.
+Be aware, that the return value is not valid until the directory is "written" to file.
 
 :c:func:`TIFFLastDirectory` returns a non-zero value if the current
 directory is the last directory in the file; otherwise zero is returned.
@@ -65,19 +70,24 @@ On UNIX systems, this is the value passed to the :c:func:`open` (2) system call.
 :c:func:`TIFFIsTiled` returns a non-zero value if the image data has a tiled
 organization. Zero is returned if the image data is organized in strips.
 
+:c:func:`TIFFIsBigEndian` returns a non-zero value if the file is BigEndian and zero if the file is LittleEndian.
+
+:c:func:`TIFFIsBigTIFF` returns a non-zero value if the file is in BigTIFF style.
+
+
 :c:func:`TIFFIsByteSwapped` returns a non-zero value if the image data was in a
 different byte-order than the host machine. Zero is returned if the TIFF file and
 local host byte-orders are the same.  Note that :c:func:`TIFFReadTile`,
 :c:func:`TIFFReadEncodedStrip` and :c:func:`TIFFReadScanline` functions already
 normally perform byte swapping to local host order if needed.
 
+:c:func:`TIFFIsMSB2LSB` returns a non-zero value if the image data is being returned
+with bit 0 as the most significant bit.
+
 :c:func:`TIFFIsUpSampled` returns a non-zero value if image data returned through
 the read interface routines is being up-sampled. This can be useful to applications
 that want to calculate I/O buffer sizes to reflect this usage (though the usual
 strip and tile size routines already do this).
-
-:c:func:`TIFFIsMSB2LSB` returns a non-zero value if the image data is being returned
-with bit 0 as the most significant bit.
 
 :c:func:`TIFFGetVersion` returns an ``ASCII`` string that has a version stamp for the 
 TIFF library software.

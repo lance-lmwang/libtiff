@@ -6,6 +6,8 @@ well as extensions.  The following describes how to add knowledge of
 new tags as builtins to libtiff, or how to application specific tags can
 be used by applications without modifying libtiff. 
 
+.. _TIFFFieldInfo_Definition:
+
 TIFFFieldInfo
 -------------
 
@@ -103,6 +105,8 @@ definitions, including :c:func:`_TIFFFindFieldInfo`, and
 :file:`tif_dirinfo.c` for details.  There must be some mechanism to get the whole
 list, though I don't see it off hand.
 
+.. _Tag_Auto_registration:
+
 Default Tag Auto-registration
 -----------------------------
 
@@ -127,6 +131,9 @@ Thus, to read anonymous auto-registered tags use the following:
     uint32_t count;
     void* value;  //has to be a pointer to the expected value type.
     TIFFGetField(tif, TIFFTAG_UNKNOWN_TO_LIBTIFF, &count, &value);
+
+
+.. _Define_Application_Tags:
 
 Defining Application Tags
 -------------------------

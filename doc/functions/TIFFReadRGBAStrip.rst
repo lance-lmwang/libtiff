@@ -12,6 +12,9 @@ Synopsis
 
 .. c:function:: int TIFFReadRGBAStrip(TIFF* tif, uint32_t row, uint32_t* raster)
 
+.. c:function:: int TIFFReadRGBAStripExt(TIFF* tif, uint32_t row, uint32_t * raster, int stop_on_error)
+
+
 Description
 -----------
 
@@ -21,6 +24,9 @@ The raster is assumed to be an array of ``ImageWidth`` × ``RowsPerStrip``
 32-bit entries, where ``ImageWidth`` is the width of the image
 (:c:macro:`TIFFTAG_IMAGEWIDTH`) and ``RowsPerStrip`` is the maximum lines
 in a strip (:c:macro:`TIFFTAG_ROWSPERSTRIP`).
+
+:c:func:`TIFFReadRGBAStripExt` provides the paramater `stop_on_error`.
+Its behaviour is described at :doc:`TIFFReadRGBAImage`.
 
 The *row* value should be the row of the first row in the strip
 (*strip* × ``RowsPerStrip``, zero based).

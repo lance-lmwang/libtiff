@@ -12,6 +12,8 @@ Synopsis
 
 .. c:function:: int TIFFReadRGBATile(TIFF* tif, uint32_t x, uint32_t y, uint32_t* raster)
 
+.. c:function:: int TIFFReadRGBATileExt(TIFF* tif, uint32_t col, uint32_t row, uint32_t * raster, int stop_on_error )
+
 Description
 -----------
 
@@ -21,6 +23,9 @@ The raster is assumed to be an array of ``TileWidth`` × ``TileLength``
 32-bit entries, where ``TileWidth`` is the width of a tile
 (:c:macro:`TIFFTAG_TILEWIDTH`) and ``TileLength`` is the height of a
 tile (:c:macro:`TIFFTAG_TILELENGTH`). 
+
+:c:func:`TIFFReadRGBATileExt` provides the paramater `stop_on_error`.
+Its behaviour is described at :doc:`TIFFReadRGBAImage`.
 
 The *x* and *y* values are the offsets from the top left corner to the top
 left corner of the tile to be read.  They must be an exact multiple of the

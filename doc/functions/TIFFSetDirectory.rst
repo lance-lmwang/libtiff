@@ -51,8 +51,12 @@ All error messages are directed to the :c:func:`TIFFError` routine.
 See also
 --------
 
-:doc:`TIFFquery` (3tiff),
-:doc:`TIFFOpen` (3tiff),
-:doc:`TIFFReadDirectory` (3tiff),
-:doc:`TIFFWriteDirectory` (3tiff),
-:doc:`libtiff` (3tiff),
+| :doc:`TIFFquery` (3tiff),
+| :doc:`TIFFOpen` (3tiff),
+| :doc:`/functions/TIFFCreateDirectory` (3tiff),
+| :doc:`/functions/TIFFCustomDirectory` (3tiff):
+|   :c:func:`TIFFCreateCustomDirectory`, :c:func:`TIFFCreateEXIFDirectory`, :c:func:`TIFFCreateGPSDirectory` 
+|   :c:func:`TIFFWriteCustomDirectory`, :c:func:`TIFFReadCustomDirectory`, :c:func:`TIFFReadEXIFDirectory` and :c:func:`TIFFReadGPSDirectory`
+| :doc:`TIFFWriteDirectory` (3tiff),
+| :doc:`TIFFReadDirectory` (3tiff),
+| :doc:`libtiff` (3tiff),

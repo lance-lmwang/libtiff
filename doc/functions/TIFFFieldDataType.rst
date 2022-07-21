@@ -12,7 +12,9 @@ Synopsis
 
 .. c:function:: TIFFDataType TIFFFieldDataType(const TIFFField* fip)
 
+
 Description
+-----------
 
 :c:func:`TIFFFieldDataType` returns the data type stored in a TIFF field.
 *fip* is a field information pointer previously returned by

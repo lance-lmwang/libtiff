@@ -20,12 +20,12 @@ from the specified TIFF field; that is, the number of arguments that should be
 supplied to :c:func:`TIFFGetField`.  For most field types this is a small
 positive integer, typically 1 or 2, but there are some special values:
 
-* :c:macro:`TIFF_VARIABLE` indicates that a variable number of values is possible;
+* :c:macro:`TIFF_VARIABLE` ``= -1`` indicates that a variable number of values is possible;
   then, a :c:type:`uint16_t` *count* argument and a pointer *data* argument must
   be supplied to :c:func:`TIFFGetField`.
-* :c:macro:`TIFF_VARIABLE2` is the same as :c:macro:`TIFF_VARIABLE` except that
+* :c:macro:`TIFF_VARIABLE2` ``= -3`` is the same as :c:macro:`TIFF_VARIABLE` except that
   the *count* argument must have type :c:type:`uint32_t`.
-* :c:macro:`TIFF_SPP` indicates that the number of arguments is equal to the
+* :c:macro:`TIFF_SPP` ``= -2`` indicates that the number of arguments is equal to the
   image's number of samples per pixel.
 
 *fip* is a field information pointer previously returned by

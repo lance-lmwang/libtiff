@@ -12,7 +12,15 @@ Synopsis
 
 .. c:function:: TIFF* TIFFOpen(const char* filename, const char* mode)
 
+.. c:function:: TIFF* TIFFOpenW(const wchar_t* name, const char* mode)
+
 .. c:function:: TIFF* TIFFFdOpen(const int fd, const char* filename, const char*mode)
+
+.. c:function:: const char * TIFFSetFileName(TIFF* tif)
+
+.. c:function:: int TIFFSetFileno(TIFF* tif, int fd)
+
+.. c:function:: int TIFFSetMode(TIFF* tif, int mode)
 
 .. c:type:: tsize_t (*TIFFReadWriteProc)(thandle_t, tdata_t, tsize_t)
 .. c:type:: toff_t (*TIFFSeekProc)(thandle_t, toff_t, int)
@@ -22,6 +30,11 @@ Synopsis
 .. c:type:: void (*TIFFUnmapFileProc)(thandle_t, tdata_t, toff_t)
 
 .. c:function:: TIFF* TIFFClientOpen(const char* filename, const char* mode, thandle_t clientdata, TIFFReadWriteProc readproc, TIFFReadWriteProc writeproc, TIFFSeekProc seekproc, TIFFCloseProc closeproc, TIFFSizeProc sizeproc, TIFFMapFileProc mapproc, TIFFUnmapFileProc unmapproc)
+
+.. c:function:: thandle_t TIFFClientdata(TIFF* tif)
+
+.. c:function:: thandle_t TIFFSetClientdata(TIFF* tif, thandle_t newvalue)
+ 
 
 Description
 -----------
@@ -58,10 +71,21 @@ This directory has all the default values specified in TIFF Revision 6.0:
 To alter these values, or to define values for additional fields,
 :c:func:`TIFFSetField` must be used.
 
+:c:func:`TIFFOpenW` opens a TIFF file with a Unicode filename, for read/writing.
+
 :c:func:`TIFFFdOpen` is like :c:func:`TIFFOpen` except that it opens a
 TIFF file given an open file descriptor *fd*.
 The file's name and mode must reflect that of the open descriptor.
 The object associated with the file descriptor **must support random access**.
+
+:c:func:`TIFFSetFileName` sets the file name in the tif-structure 
+and returns the old file name.
+
+:c:func:`TIFFSetFileno` sets open file's I/O descriptor, 
+and return previous value.
+
+:c:func:`TIFFSetMode` sets the `libtiff` open mode in the tif-structure 
+and returns the old mode.
 
 :c:func:`TIFFClientOpen` is like :c:func:`TIFFOpen` except that the caller
 supplies a collection of functions that the library will use to do UNIX-like
@@ -75,6 +99,9 @@ memory; c.f. :c:func:`mmap` (2) and :c:func:`munmap` (2).
 The *clientdata* parameter is an opaque "handle" passed to the client-specified
 routines passed as parameters to :c:func:`TIFFClientOpen`.
 
+:c:func:`TIFFClientdata` returns open file's clientdata handle.
+
+:c:func:`TIFFSetClientdata` sets open file's clientdata, and return previous value.
 
 Options
 -------
@@ -247,4 +274,5 @@ See also
 --------
 
 :doc:`libtiff` (3tiff),
-:doc:`TIFFClose` (3tiff)
+:doc:`TIFFClose` (3tiff), 
+:doc:`/functions/TIFFStrileQuery`
