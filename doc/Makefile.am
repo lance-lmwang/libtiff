@@ -240,7 +240,7 @@ rst_sources = \
 	functions/TIFFReadRGBAStrip.rst \
 	functions/TIFFquery.rst \
 	functions/TIFFWriteEncodedTile.rst \
-	functions/_TIFFAuxiliary.rst \
+	functions/_TIFFauxiliary.rst \
 	functions/_TIFFRewriteField.rst \
 	functions/TIFFAccessTagMethods.rst \
 	functions/TIFFClientInfo.rst \
