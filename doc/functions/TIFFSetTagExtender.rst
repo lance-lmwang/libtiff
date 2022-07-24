@@ -10,9 +10,7 @@ Synopsis
 
     #include <tiffio.h>
 
-
 .. c:function:: TIFFExtendProc TIFFSetTagExtender(TIFFExtendProc extender)
-
 
 Description
 -----------
@@ -24,6 +22,6 @@ A brief description can be found at :ref:`define_application_tags`.
 See also
 --------
 
-:doc:`/functions/libtiff` (3tiff)
-:doc:`/addingtags`
-:doc:`/functions/TIFFMergeFieldInfo`
+:doc:`libtiff` (3tiff),
+:doc:`/addingtags` (3tiff),
+:doc:`TIFFMergeFieldInfo` (3tiff)

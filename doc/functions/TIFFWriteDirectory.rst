@@ -10,7 +10,6 @@ Synopsis
 
     #include <tiffio.h>
 
-
 .. c:function:: int TIFFWriteDirectory(TIFF* tif)
 
 .. c:function:: int TIFFRewriteDirectory(TIFF* tif)
@@ -20,7 +19,6 @@ Synopsis
 .. c:function:: void TIFFSetWriteOffset(TIFF* tif, toff_t off)
 
 .. c:function:: int TIFFWriteCheck(TIFF* tif, int tiles, const char* module)
-
 
 Description
 -----------
@@ -55,14 +53,13 @@ is incomplete, but you will at least get all the valid data in the file
 before that.  When the file is complete, just use
 :c:func:`TIFFWriteDirectory` as usual to finish it off cleanly.
 
-The :c:func:`TIFFSetWriteOffset` sets the current write offset.  
+The :c:func:`TIFFSetWriteOffset` sets the current write offset.
 This should only be used to set the offset to a known previous location
 (very carefully), or to 0 so that the next write gets appended to the end of the file.
 
 The :c:func:`TIFFWriteCheck`  verify file is writable and that the directory
-information is setup properly.  In doing the latter we also "freeze" 
+information is setup properly.  In doing the latter we also "freeze"
 the state of the directory so that important information is not changed.
-  
 
 Return values
 -------------
@@ -128,13 +125,11 @@ All error messages are directed to the :c:func:`TIFFError` routine.
 See also
 --------
 
-| :doc:`TIFFquery` (3tiff),
-| :doc:`TIFFOpen` (3tiff),
-| :doc:`/functions/TIFFCreateDirectory` (3tiff),
-| :doc:`/functions/TIFFCustomDirectory` (3tiff):
-|   :c:func:`TIFFCreateCustomDirectory`, :c:func:`TIFFCreateEXIFDirectory`, :c:func:`TIFFCreateGPSDirectory` 
-|   :c:func:`TIFFWriteCustomDirectory`, :c:func:`TIFFReadCustomDirectory`, :c:func:`TIFFReadEXIFDirectory` and :c:func:`TIFFReadGPSDirectory`
-| :doc:`TIFFSetDirectory` (3tiff),
-| :doc:`TIFFReadDirectory` (3tiff),
-| :doc:`TIFFError` (3tiff),
-| :doc:`libtiff` (3tiff),
+:doc:`TIFFquery` (3tiff),
+:doc:`TIFFOpen` (3tiff),
+:doc:`TIFFCreateDirectory` (3tiff),
+:doc:`TIFFCustomDirectory` (3tiff),
+:doc:`TIFFSetDirectory` (3tiff),
+:doc:`TIFFReadDirectory` (3tiff),
+:doc:`TIFFError` (3tiff),
+:doc:`libtiff` (3tiff)

@@ -42,4 +42,4 @@ See also
 :doc:`TIFFReadEncodedTile` (3tiff),
 :doc:`TIFFReadTile` (3tiff),
 :doc:`TIFFtile` (3tiff),
-:doc:`libtiff` (3tiff),
+:doc:`libtiff` (3tiff)

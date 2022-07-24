@@ -10,8 +10,7 @@ Synopsis
 
     #include <tiffio.h>
 
-
-.. c:function:: TIFFTagMethods *TIFFAccessTagMethods( TIFF *tif )
+.. c:function:: TIFFTagMethods *TIFFAccessTagMethods( TIFF* tif )
 
 Description
 -----------
@@ -27,4 +26,4 @@ None
 See also
 --------
 
-:doc:`/functions/libtiff` (3tiff)
+:doc:`libtiff` (3tiff)

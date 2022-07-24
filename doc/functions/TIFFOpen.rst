@@ -35,7 +35,6 @@ Synopsis
 
 .. c:function:: thandle_t TIFFSetClientdata(TIFF* tif, thandle_t newvalue)
  
-
 Description
 -----------
 
@@ -82,7 +81,7 @@ The object associated with the file descriptor **must support random access**.
 and returns the old file name.
 
 :c:func:`TIFFSetFileno` sets open file's I/O descriptor, 
-and return previous value.
+and returns the previous value.
 
 :c:func:`TIFFSetMode` sets the `libtiff` open mode in the tif-structure 
 and returns the old mode.
@@ -274,5 +273,5 @@ See also
 --------
 
 :doc:`libtiff` (3tiff),
-:doc:`TIFFClose` (3tiff), 
-:doc:`/functions/TIFFStrileQuery`
+:doc:`TIFFClose` (3tiff),
+:doc:`TIFFStrileQuery`

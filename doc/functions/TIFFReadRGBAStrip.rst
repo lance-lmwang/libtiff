@@ -14,7 +14,6 @@ Synopsis
 
 .. c:function:: int TIFFReadRGBAStripExt(TIFF* tif, uint32_t row, uint32_t * raster, int stop_on_error)
 
-
 Description
 -----------
 

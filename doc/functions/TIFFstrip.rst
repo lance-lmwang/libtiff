@@ -69,13 +69,11 @@ If an error occurs, 0xFFFFFFFF `(=(tmsize_t(-1))` is returned.
 as :c:type:`uint64_t`. 
 If an error occurs, 0xFFFFFFFF `(=(uint64_t(-1))` is returned.
 
-
 :c:func:`TIFFComputeStrip` returns the strip that contains the specified
 coordinates. A valid strip is always returned; out-of-range coordinate
 values are clamped to the bounds of the image. The *row* parameter is
 always used in calculating a strip. The *sample* parameter is used only
 if data are organized in separate planes (``PlanarConfiguration`` = 2).
-
 
 :c:func:`TIFFNumberOfStrips` returns the number of strips in the image.
 
@@ -95,4 +93,4 @@ See also
 :doc:`TIFFReadRawStrip` (3tiff),
 :doc:`TIFFWriteEncodedStrip` (3tiff),
 :doc:`TIFFWriteRawStrip` (3tiff),
-:doc:`libtiff` (3tiff),
+:doc:`libtiff` (3tiff)

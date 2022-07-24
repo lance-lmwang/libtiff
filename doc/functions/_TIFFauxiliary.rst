@@ -1,4 +1,4 @@
-_TIFFAuxiliary
+_TIFFauxiliary
 =================
 
 Synopsis

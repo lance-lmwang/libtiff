@@ -120,7 +120,7 @@ The following routines are part of the library. Consult specific manual pages
 for details on their operation; on most systems doing :command:`man function-name`
 will work.
 
-.. list-table:: **Libtiff functions**
+.. list-table:: *Libtiff functions*
     :widths: 5 20
     :header-rows: 1
 
@@ -488,7 +488,7 @@ will work.
     * - :c:func:`TIFFYCbCrToRGBInit`
       - initialize YCbCr to RGB conversion state
 
-.. list-table:: **Libtiff auxillary functions**
+.. list-table:: *Libtiff auxillary functions*
     :widths: 5 20
     :header-rows: 1
 

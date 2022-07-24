@@ -10,11 +10,9 @@ Synopsis
 
     #include <tiffio.h>
 
-.. c:function:: void *TIFFGetClientInfo( TIFF *tif, const char *name )
+.. c:function:: void *TIFFGetClientInfo(TIFF* tif, const char *name)
 
-.. c:function:: void TIFFSetClientInfo( TIFF *tif, void *data, const char *name )
-
-
+.. c:function:: void TIFFSetClientInfo(TIFF* tif, void *data, const char *name)
 
 Description
 -----------
@@ -29,9 +27,6 @@ If the *name* is not found ``NULL`` is returned.
 
 :c:func:`TIFFSetClientInfo` adds or replaces an entry in the clientinfo-list 
 with the *name* and the pointer to the *data* provided by the caller.
-
-
-
 
 Diagnostics
 -----------

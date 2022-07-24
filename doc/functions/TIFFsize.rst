@@ -11,10 +11,11 @@ Synopsis
     #include <tiffio.h>
 
 .. c:function:: tsize_t TIFFRasterScanlineSize(TIFF* tif)
+
 .. c:function:: uint64_t TIFFRasterScanlineSize64(TIFF* tif)
 
-
 .. c:function:: tsize_t TIFFScanlineSize(TIFF* tif)
+
 .. c:function:: uint64_t TIFFScanlineSize64(TIFF* tif)
 
 Description
@@ -31,13 +32,11 @@ subsampling lines divided by vertical subsampling. It should thus make
 sense when multiplied by a multiple of vertical subsampling.
 :c:func:`TIFFScanlineSize64` returns the size as :c:type:`uint64_t`.
 
-
 :c:func:`TIFFRasterScanlineSize` returns the size in bytes of a complete
 decoded and packed raster scanline. Note that this value may be different
 from the value returned by :c:func:`TIFFScanlineSize` if data is stored
 as separate planes. 
 :c:func:`TIFFRasterScanlineSize64` returns the size as :c:type:`uint64_t`.
-
 
 Diagnostics
 -----------

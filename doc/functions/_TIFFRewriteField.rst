@@ -12,7 +12,6 @@ Synopsis
 
 .. c:function:: int _TIFFRewriteField(TIFF* tif, uint16_t tag, TIFFDataType in_datatype, tmsize_t count, void* data)
 
-
 Description
 -----------
 
@@ -25,6 +24,7 @@ the directory is already on disk.
 
 Return values
 -------------
+
 Returns zero on failure, and one on success. 
 
 See also

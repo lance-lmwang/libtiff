@@ -54,4 +54,4 @@ See also
 :doc:`TIFFReadRawStrip` (3tiff),
 :doc:`TIFFReadScanline` (3tiff),
 :doc:`TIFFReadEncodedTile` (3tiff),
-:doc:`libtiff` (3tiff),
+:doc:`libtiff` (3tiff)

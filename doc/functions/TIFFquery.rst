@@ -48,7 +48,8 @@ The following routines return status information about an open TIFF file.
 :c:func:`TIFFCurrentDirectory` returns the index of the current directory
 (directories are numbered starting at 0). This number is suitable for use
 with the :c:func:`TIFFSetDirectory` routine.
-Be aware, that the return value is not valid until the directory is "written" to file.
+
+.. note:: Be aware that the return value is not valid until the directory is "written" to file.
 
 :c:func:`TIFFLastDirectory` returns a non-zero value if the current
 directory is the last directory in the file; otherwise zero is returned.
@@ -101,4 +102,4 @@ See also
 --------
 
 :doc:`libtiff` (3tiff),
-:doc:`TIFFOpen` (3tiff),
+:doc:`TIFFOpen` (3tiff)

@@ -39,4 +39,4 @@ Return values
 See also
 --------
 
-:doc:`libtiff` (3tiff),
+:doc:`libtiff` (3tiff)

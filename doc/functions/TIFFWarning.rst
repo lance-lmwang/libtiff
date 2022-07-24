@@ -12,12 +12,15 @@ Synopsis
     #include <stdarg.h>
 
 .. c:function:: void TIFFWarning(const char* module, const char* fmt, ...)
+
 .. c:function:: void TIFFWarningExt(thandle_t fd, const char* module, const char* fmt, ...)
 
 .. c:type:: void (*TIFFWarningHandler)(const char* module, const char* fmt, va_list ap);
+
 .. c:type:: void (*TIFFWarningHandlerExt)(thandle_t fd, const char* module, const char* fmt, va_list ap);
 
 .. c:function:: TIFFWarningHandler TIFFSetWarningHandler(TIFFWarningHandler handler)
+
 .. c:function:: TIFFWarningHandlerExt TIFFSetWarningHandlerExt(TIFFWarningHandlerExt handler)
 
 Description
@@ -37,15 +40,21 @@ A :c:macro:`NULL` (0) warning handler function may be installed to suppress
 warning messages.
 
 The function :c:func:`TIFFWarningExt` provides a file handle in order 
-to write the warning message to a file. Often the file handle used is ``tif->tif_clientdata``
+to write the warning message to a file. Within ``libtiff`` :c:func:`TIFFWarningExt` 
+is called using ``tif->tif_clientdata`` as file handle.
+
+.. TODO: Check description, how to setup a TIFFWarnignExt handler and its file handle.
+
+With :c:func:`TIFFSetWarningHandlerExt` an extra warning handler can be setup in order
+to write to a file. The file handle needs to be stored in ``tif->tif_clientdata`` if
+the ``libtiff`` internal warnings shall also be written to that file.
 
 Note
 ----
 In ``libtiff`` only a default warning handler is defined, writing the message to ``stderr``.
 For writing warning messages to file, an extra *TIFFWarningHandlerExt* function has to be set.
 :c:func:`TIFFWarning` and :c:func:`TIFFWarningExt` will try to call both handler functions if defined. 
-However, :c:func:`TIFFWarningExt` will pass "0" as file handle to the extended warning handler.
-
+However, :c:func:`TIFFWarning` will pass "0" as file handle to the extended warning handler.
 
 Return values
 -------------

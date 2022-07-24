@@ -12,7 +12,6 @@ Synopsis
 
 .. c:function:: TIFFDataType TIFFFieldDataType(const TIFFField* fip)
 
-
 Description
 -----------
 

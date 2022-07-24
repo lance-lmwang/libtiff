@@ -1,6 +1,5 @@
 TIFFClose
 ==========
-Closes a previously opened TIFF file
 
 Synopsis
 --------
@@ -11,10 +10,9 @@ Synopsis
 
     #include <tiffio.h>
 
-
 .. c:function:: void TIFFClose(TIFF* tif)
 
-.. c:function:: void TIFFCleanup(TIFF *tif )
+.. c:function:: void TIFFCleanup(TIFF* tif)
 
 Description
 -----------
@@ -25,11 +23,9 @@ the contents of the current directory (if modified); and all resources
 are reclaimed.
 
 :c:func:`TIFFCleanup` is an auxiliary function to free the TIFF structure. 
-Given structure will be completely freed, so you should save opened file handle 
+The given structure will be completely freed, so you should save opened file handle 
 and pointer to the close procedure in external variables before calling
 :c:func:`TIFFCleanup`, if you will need these ones to close the file.
-
-
 
 Diagnostics
 -----------

@@ -12,14 +12,16 @@ Synopsis
     #include <stdarg.h>
 
 .. c:function:: void TIFFError(const char * module, const char * fmt, ...)
+
 .. c:function:: void TIFFErrorExt(thandle_t fd, const char* module, const char* fmt, ...)
 
 .. c:type:: void (*TIFFErrorHandler)(const char * module, const char* fmt, va_list ap)
+
 .. c:type:: void (*TIFFErrorHandlerExt)(thandle_t fd, const char * module, const char* fmt, va_list ap)
 
 .. c:function:: TIFFErrorHandler TIFFSetErrorHandler(TIFFErrorHandler handler)
-.. c:function:: TIFFErrorHandlerExt TIFFSetErrorHandlerExt(TIFFErrorHandlerExt handler)
 
+.. c:function:: TIFFErrorHandlerExt TIFFSetErrorHandlerExt(TIFFErrorHandlerExt handler)
 
 Description
 -----------
@@ -38,6 +40,7 @@ to write the error message to a file. Often the file handle used is ``tif->tif_c
 
 Note
 ----
+
 In ``libtiff`` only a default error handler is defined, writing the message to ``stderr``.
 For writing error messages to file, an extra *TIFFErrorHandlerExt* function has to be set.
 :c:func:`TIFFError` and :c:func:`TIFFErrorExt` will try to call both handler functions if defined. 

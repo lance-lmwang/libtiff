@@ -24,7 +24,7 @@ The raster is assumed to be an array of ``TileWidth`` × ``TileLength``
 (:c:macro:`TIFFTAG_TILEWIDTH`) and ``TileLength`` is the height of a
 tile (:c:macro:`TIFFTAG_TILELENGTH`). 
 
-:c:func:`TIFFReadRGBATileExt` provides the paramater `stop_on_error`.
+:c:func:`TIFFReadRGBATileExt` provides the parameter `stop_on_error`.
 Its behaviour is described at :doc:`TIFFReadRGBAImage`.
 
 The *x* and *y* values are the offsets from the top left corner to the top
@@ -138,4 +138,4 @@ See also
 :doc:`TIFFRGBAImage` (3tiff),
 :doc:`TIFFReadRGBAImage` (3tiff),
 :doc:`TIFFReadRGBAStrip` (3tiff),
-:doc:`libtiff` (3tiff),
+:doc:`libtiff` (3tiff)

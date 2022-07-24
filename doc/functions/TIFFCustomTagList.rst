@@ -1,6 +1,5 @@
 TIFFCustomTagList
 =================
-Retrieves items of the custom tag list.
 
 Synopsis
 --------
@@ -11,12 +10,9 @@ Synopsis
 
     #include <tiffio.h>
 
+.. c:function:: int TIFFGetTagListCount(TIFF* tif)
 
-.. c:function:: int TIFFGetTagListCount( TIFF *tif )
-
-.. c:function:: uint32_t TIFFGetTagListEntry(TIFF *tif, int tag_index )
-
-
+.. c:function:: uint32_t TIFFGetTagListEntry(TIFF* tif, int tag_index)
 
 Description
 -----------
@@ -30,6 +26,7 @@ in the tag list 0xFFFFFFFF `(=(uint32_t(-1))` is returned.
 
 Note
 ----
+
 The known tags to ``libtiff`` are define as 'named' tags and a lot of them as *custom* tags.
 The custom tag definitions are handled in an internal custom tag list.
 This list can also be extended by adding tag definitions to that list,

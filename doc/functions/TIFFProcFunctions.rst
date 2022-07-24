@@ -24,7 +24,6 @@ Synopsis
 
 .. c:function:: TIFFReadWriteProc TIFFGetWriteProc(TIFF* tif)
 
-
 Description
 -----------
 
@@ -46,11 +45,6 @@ The following routines return ?????? an open TIFF file.
 
 :c:func:`TIFFGetWriteProc` returns a pointer to file write method.
 
-
-
-
-
-
 Diagnostics
 -----------
 
@@ -60,4 +54,4 @@ See also
 --------
 
 :doc:`libtiff` (3tiff),
-:doc:`TIFFOpen` (3tiff),
+:doc:`TIFFOpen` (3tiff)

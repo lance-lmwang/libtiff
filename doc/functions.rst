@@ -61,5 +61,5 @@ TIFF Functions Overview
     functions/TIFFWriteRawTile
     functions/TIFFWriteScanline
     functions/TIFFWriteTile
-    functions/_TIFFAuxiliary
+    functions/_TIFFauxiliary
     functions/_TIFFRewriteField
