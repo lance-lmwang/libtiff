@@ -122,7 +122,7 @@ A sequence to handle a second (or third) TIFF directory - in this case the GPS I
     TIFFCreateCustomDirectory(tiffOut, infoarray);              /* for a real custom directory */
     /* or alternatively, use GPS or EXIF with pre-defined TIFFFieldArray IFD field structure */
     TIFFCreateGPSDirectory(tiffOut);
-    TIFFSetField( tiffOut, GPSTAG_VERSIONID, gpsVersion);       /* set fields of the custom directory */
+    TIFFSetField(tiffOut, GPSTAG_VERSIONID, gpsVersion);       /* set fields of the custom directory */
 
 Be aware that every :c:func:`TIFFCreateDirectory` or :c:func:`TIFFWriteDirectory`  apparently frees the ``*tif`` structure and sets up a new one!
 
@@ -132,7 +132,7 @@ Be aware that every :c:func:`TIFFCreateDirectory` or :c:func:`TIFFWriteDirectory
 
 ::
 
-    TIFFWriteCustomDirectory( tiffOut, &dir_offset);
+    TIFFWriteCustomDirectory(tiffOut, &dir_offset);
 
 7) Reload the first directory (i.e. the original TIFF directory). Apparently, this reads the data back from file.
 

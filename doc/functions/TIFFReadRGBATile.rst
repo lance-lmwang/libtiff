@@ -12,7 +12,7 @@ Synopsis
 
 .. c:function:: int TIFFReadRGBATile(TIFF* tif, uint32_t x, uint32_t y, uint32_t* raster)
 
-.. c:function:: int TIFFReadRGBATileExt(TIFF* tif, uint32_t col, uint32_t row, uint32_t * raster, int stop_on_error )
+.. c:function:: int TIFFReadRGBATileExt(TIFF* tif, uint32_t col, uint32_t row, uint32_t * raster, int stop_on_error)
 
 Description
 -----------
