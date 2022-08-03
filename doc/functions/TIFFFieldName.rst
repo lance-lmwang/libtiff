@@ -17,7 +17,8 @@ Description
 
 :c:func:`TIFFFieldName` returns the textual name for a TIFF field.
 *fip* is a field information pointer previously returned by
-:c:func:`TIFFFindField`, :c:func:`TIFFFieldWithTag`, or :c:func:`TIFFFieldWithName`.
+:c:func:`TIFFFindField`, :c:func:`TIFFFieldWithTag`,
+or :c:func:`TIFFFieldWithName`.
 
 Return values
 -------------

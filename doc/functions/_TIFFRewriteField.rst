@@ -15,19 +15,19 @@ Synopsis
 Description
 -----------
 
-:c:func:`_TIFFRewriteField` 
-Rewrite a field in the directory on disk without regard to updating the 
-TIFF directory structure in memory.  Currently only supported for field 
-that already exist in the on-disk directory.  
-Mainly used for updating stripoffset / stripbytecount values after 
-the directory is already on disk.              
+:c:func:`_TIFFRewriteField`
+Rewrite a field in the directory on disk without regard to updating the
+TIFF directory structure in memory.  Currently only supported for field
+that already exist in the on-disk directory.
+Mainly used for updating stripoffset / stripbytecount values after
+the directory is already on disk.
 
 Return values
 -------------
 
-Returns zero on failure, and one on success. 
+Returns zero on failure, and one on success.
 
 See also
 --------
 
-:doc:`libtiff` (3tiff),
+:doc:`libtiff` (3tiff)

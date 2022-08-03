@@ -37,8 +37,8 @@ except that it takes a pointer to a variable argument list.
 :c:func:`TIFFVSetField` is useful for writing routines that are layered on
 top of the functionality provided by :c:func:`TIFFSetField`.
 
-:c:func:`TIFFUnsetField` clears the contents of the field in the internal structure.
-If it is a custom field, it is removed from the list of known tags.
+:c:func:`TIFFUnsetField` clears the contents of the field in the internal
+structure. If it is a custom field, it is removed from the list of known tags.
 
 The tags understood by :program:`libtiff`, the number of parameter values,
 and the expected types for the parameter values are shown below.

@@ -20,8 +20,8 @@ Description
 -----------
 
 :program:`libtiff` is a library for reading and writing data files encoded with the
-*"Tag Image File"* format, Revision 6.0 (or revision 5.0 or revision 4.0). This file format is
-suitable for archiving multi-color and monochromatic image data.
+*"Tag Image File"* format, Revision 6.0 (or revision 5.0 or revision 4.0). This file
+format is suitable for archiving multi-color and monochromatic image data.
 
 The library supports several compression algorithms, as indicated by the
 ``Compression`` field, including:
@@ -271,7 +271,8 @@ will work.
     * - :c:func:`TIFFGetWriteProc`
       - returns a pointer to file write method
     * - :c:func:`TIFFIsBigEndian`
-      - returns a non-zero value if the file is BigEndian and zero if the file is LittleEndian
+      - returns a non-zero value if the file is BigEndian and zero if the file is
+        LittleEndian
     * - :c:func:`TIFFIsBigTIFF`
       - returns a non-zero value if the file is in BigTIFF style
     * - :c:func:`TIFFIsByteSwapped`
@@ -337,13 +338,16 @@ will work.
     * - :c:func:`TIFFReadRGBAImage`
       - read an image into a fixed format raster
     * - :c:func:`TIFFReadRGBAImageOriented`
-      - works like :c:func:`TIFFReadRGBAImage` except that the user can specify the raster origin position
+      - works like :c:func:`TIFFReadRGBAImage` except that the user can specify
+          the raster origin position
     * - :c:func:`TIFFReadRGBAStrip`
-      - reads a single strip of a strip-based image into memory, storing the result in the user supplied RGBA raster
+      - reads a single strip of a strip-based image into memory, storing the
+        result in the user supplied RGBA raster
     * - :c:func:`TIFFReadRGBAStripExt`
       - same as :c:func:`TIFFReadRGBAStrip` but providing the paramater `stop_on_error`
     * - :c:func:`TIFFReadRGBATile`
-      - reads a single tile of a tile-based image into memory, storing the result in the user supplied RGBA raster
+      - reads a single tile of a tile-based image into memory, storing the
+        result in the user supplied RGBA raster
     * - :c:func:`TIFFReadRGBATileExt`
       - same as :c:func:`TIFFReadRGBATile` but providing the paramater `stop_on_error`
     * - :c:func:`TIFFReadScanline`
@@ -393,7 +397,8 @@ will work.
     * - :c:func:`TIFFSetSubDirectory`
       - set the current directory
     * - :c:func:`TIFFSetTagExtender`
-      - is used to register the merge function for user defined tags as an extender callback with libtiff
+      - is used to register the merge function for user defined tags as an
+        extender callback with libtiff
     * - :c:func:`TIFFSetupStrips`
       -
     * - :c:func:`TIFFSetWarningHandler`
@@ -523,7 +528,7 @@ will work.
     * - :c:func:`_TIFFrealloc`
       - dynamically reallocate memory buffer
     * - :c:func:`_TIFFRewriteField`
-      - Rewrite a field in the directory on disk without regard 
+      - Rewrite a field in the directory on disk without regard
         to updating the TIFF directory structure in memory
 
 

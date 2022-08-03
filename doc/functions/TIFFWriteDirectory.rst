@@ -55,7 +55,8 @@ before that.  When the file is complete, just use
 
 The :c:func:`TIFFSetWriteOffset` sets the current write offset.
 This should only be used to set the offset to a known previous location
-(very carefully), or to 0 so that the next write gets appended to the end of the file.
+(very carefully), or to 0 so that the next write gets appended to the end
+of the file.
 
 The :c:func:`TIFFWriteCheck`  verify file is writable and that the directory
 information is setup properly.  In doing the latter we also "freeze"
@@ -85,8 +86,8 @@ All error messages are directed to the :c:func:`TIFFError` routine.
 
 ``"Cannot write directory, out of space"``:
 
-  There was not enough space to allocate a temporary area for the directory that
-  was to be written.
+  There was not enough space to allocate a temporary area for the directory
+  that was to be written.
 
 ``"Error writing directory count"``:
 

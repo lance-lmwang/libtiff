@@ -44,7 +44,7 @@ value using :c:func:`_TIFFmemset`, copied to another memory location using
 These routines conform to the equivalent C routines:
 :c:func:`memset`, :c:func:`memcpy`, :c:func:`memcmp`, respectively.
 
-:c:func:`_TIFFCheckMalloc` and :c:func:`_TIFFCheckRealloc` are checking for 
+:c:func:`_TIFFCheckMalloc` and :c:func:`_TIFFCheckRealloc` are checking for
 integer overflow before calling :c:func:`_TIFFmalloc` and :c:func:`_TIFFrealloc`,
 respectively.
 

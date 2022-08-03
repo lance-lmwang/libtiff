@@ -34,7 +34,7 @@ Synopsis
 .. c:function:: thandle_t TIFFClientdata(TIFF* tif)
 
 .. c:function:: thandle_t TIFFSetClientdata(TIFF* tif, thandle_t newvalue)
- 
+
 Description
 -----------
 
@@ -60,8 +60,8 @@ This directory has all the default values specified in TIFF Revision 6.0:
 * ``BitsPerSample`` = 1,
 * ``ThreshHolding`` = "bilevel art scan"
 * ``FillOrder`` = 1 (most significant bit of each data byte is filled first)
-* ``Orientation`` = 1 (the 0th row represents the visual top of the image, and the 0th
-  column represents the visual left hand side),
+* ``Orientation`` = 1 (the 0th row represents the visual top of the image,
+  and the 0th column represents the visual left hand side),
 * ``SamplesPerPixel`` = 1,
 * ``RowsPerStrip`` = ∞,
 * ``ResolutionUnit`` = 2 (inches), and
@@ -77,13 +77,13 @@ TIFF file given an open file descriptor *fd*.
 The file's name and mode must reflect that of the open descriptor.
 The object associated with the file descriptor **must support random access**.
 
-:c:func:`TIFFSetFileName` sets the file name in the tif-structure 
+:c:func:`TIFFSetFileName` sets the file name in the tif-structure
 and returns the old file name.
 
-:c:func:`TIFFSetFileno` sets open file's I/O descriptor, 
+:c:func:`TIFFSetFileno` sets open file's I/O descriptor,
 and returns the previous value.
 
-:c:func:`TIFFSetMode` sets the `libtiff` open mode in the tif-structure 
+:c:func:`TIFFSetMode` sets the `libtiff` open mode in the tif-structure
 and returns the old mode.
 
 :c:func:`TIFFClientOpen` is like :c:func:`TIFFOpen` except that the caller
@@ -141,7 +141,7 @@ specification.
 ``H``:
 
   Force image data that is read or written to be treated with
-  bits filled in the same order as the native 
+  bits filled in the same order as the native
   CPU.
 
 ``M``:
@@ -225,7 +225,7 @@ the call to open a file; for example, ``wb`` or ``wl``.
 Return values
 -------------
 
-Upon successful completion 
+Upon successful completion
 :c:func:`TIFFOpen`, :c:func:`TIFFFdOpen`, and :c:func:`TIFFClientOpen`
 return a TIFF pointer.  Otherwise, :c:macro:`NULL` is returned.
 

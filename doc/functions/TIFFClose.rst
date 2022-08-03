@@ -22,10 +22,10 @@ Description
 the contents of the current directory (if modified); and all resources
 are reclaimed.
 
-:c:func:`TIFFCleanup` is an auxiliary function to free the TIFF structure. 
-The given structure will be completely freed, so you should save opened file handle 
-and pointer to the close procedure in external variables before calling
-:c:func:`TIFFCleanup`, if you will need these ones to close the file.
+:c:func:`TIFFCleanup` is an auxiliary function to free the TIFF structure.
+The given structure will be completely freed, so you should save opened file
+handle and pointer to the close procedure in external variables before
+calling :c:func:`TIFFCleanup`, if you will need these ones to close the file.
 
 Diagnostics
 -----------

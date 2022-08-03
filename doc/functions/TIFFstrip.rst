@@ -65,8 +65,8 @@ If an error occurs, 0 is returned.
 (i.e. not decoded).
 If an error occurs, 0xFFFFFFFF `(=(tmsize_t(-1))` is returned.
 
-:c:func:`TIFFRawStripSize64` returns the number of bytes in a raw strip 
-as :c:type:`uint64_t`. 
+:c:func:`TIFFRawStripSize64` returns the number of bytes in a raw strip
+as :c:type:`uint64_t`.
 If an error occurs, 0xFFFFFFFF `(=(uint64_t(-1))` is returned.
 
 :c:func:`TIFFComputeStrip` returns the strip that contains the specified
@@ -77,7 +77,7 @@ if data are organized in separate planes (``PlanarConfiguration`` = 2).
 
 :c:func:`TIFFNumberOfStrips` returns the number of strips in the image.
 
-.. TODO: Explain the function 
+.. TODO: Explain the function
 
 :c:func:`TIFFSetupStrips`  ?????
 

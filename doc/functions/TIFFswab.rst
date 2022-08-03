@@ -42,17 +42,19 @@ Description
 The following routines are used by the library to swap 16-, 32- and 64-bit
 data and to reverse the order of bits in bytes.
 
-:c:func:`TIFFSwabShort` and :c:func:`TIFFSwabLong` and :c:func:`TIFFSwabFloat` swap the bytes in a
-single 16- and 32-bit item, respectively.
+:c:func:`TIFFSwabShort` and :c:func:`TIFFSwabLong` and :c:func:`TIFFSwabFloat`
+swap the bytes in a single 16- and 32-bit item, respectively.
 
 :c:func:`TIFFSwabLong8` and :c:func:`TIFFSwabDouble`
 swap the bytes in a single 64-bit item.
 
-:c:func:`TIFFSwabArrayOfTriples` swap the first and the third byte of each triple
-(three bytes) within the byte array. The second byte of each triple stays untouched.
+:c:func:`TIFFSwabArrayOfTriples` swap the first and the third byte of
+each triple (three bytes) within the byte array. The second byte of each
+triple stays untouched.
 
-:c:func:`TIFFSwabArrayOfShort` and  :c:func:`TIFFSwabArrayOfLong`, :c:func:`TIFFSwabArrayOfFloat`
-swap the bytes in an array of 16- and 32-bit items, respectively.
+:c:func:`TIFFSwabArrayOfShort` and  :c:func:`TIFFSwabArrayOfLong`,
+:c:func:`TIFFSwabArrayOfFloat` swap the bytes in an array of 16- and 32-bit
+items, respectively.
 
 :c:func:`TIFFSwabArrayOfLong8` and :c:func:`TIFFSwabArrayOfDouble`
 swap the bytes in an array of 64-bit items.

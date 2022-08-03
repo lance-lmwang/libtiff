@@ -15,7 +15,7 @@ Synopsis
 Description
 -----------
 
-:c:func:`TIFFSetTagExtender` is used to register the merge function 
+:c:func:`TIFFSetTagExtender` is used to register the merge function
 for user defined tags as an extender callback with libtiff.
 A brief description can be found at :ref:`define_application_tags`.
 

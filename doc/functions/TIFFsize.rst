@@ -35,7 +35,7 @@ sense when multiplied by a multiple of vertical subsampling.
 :c:func:`TIFFRasterScanlineSize` returns the size in bytes of a complete
 decoded and packed raster scanline. Note that this value may be different
 from the value returned by :c:func:`TIFFScanlineSize` if data is stored
-as separate planes. 
+as separate planes.
 :c:func:`TIFFRasterScanlineSize64` returns the size as :c:type:`uint64_t`.
 
 Diagnostics

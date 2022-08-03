@@ -19,14 +19,14 @@ Synopsis
 Description
 -----------
 
-:c:func:`_TIFFClampDoubleToUInt32` clamps double values into the range of
-:c:type:`uint32_t` (i.e. 0 .. 0xFFFFFFFF)
+:c:func:`_TIFFClampDoubleToUInt32` clamps double values into the range
+of :c:type:`uint32_t` (i.e. 0 .. 0xFFFFFFFF)
 
 :c:func:`_TIFFMultiply32` and :c:func:`_TIFFMultiply64` checks for
 an integer overflow of the multiplication result and return the multiplication
 result or `0` if an overflow would happen.
-The string `where` is printed in the error message in case an overflow happens
-and can be used to indicate where the function was called.
+The string `where` is printed in the error message in case an overflow
+happens and can be used to indicate where the function was called.
 
 See also
 --------

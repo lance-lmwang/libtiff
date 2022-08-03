@@ -48,9 +48,10 @@ scheme will be decoded using the supplied codec.
 :c:func:`TIFFIsCODECConfigured` returns 1 if the codec is configured
 and working. Otherwise 0 will be returned.
 
-:c:func:`TIFFGetConfiguredCODECs` gets list of configured codecs, both built-in and registered by user.
-Function returns array of :c:type:`TIFFCodec` records (the last record should be NULL) or NULL if function failed.
-Caller is responsible to free this structure.
+:c:func:`TIFFGetConfiguredCODECs` gets list of configured codecs,
+both built-in and registered by user. Function returns array of
+:c:type:`TIFFCodec` records (the last record should be NULL) or NULL
+if function failed. Caller is responsible to free this structure.
 
 :c:func:`TIFFSetCompressionScheme`  ????
 

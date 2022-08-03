@@ -15,12 +15,14 @@ Synopsis
 Description
 -----------
 
-Use the provided input buffer (`inbuf`, `insize`) and decompress it into (`outbuf`, `outsize`).
-This function replaces the use of :c:func:`TIFFReadEncodedStrip` / :c:func:`TIFFReadEncodedTile`
+Use the provided input buffer (`inbuf`, `insize`) and decompress it
+into (`outbuf`, `outsize`). This function replaces the use of
+:c:func:`TIFFReadEncodedStrip` / :c:func:`TIFFReadEncodedTile`
 when the user can provide the buffer for the input data, for example when
 he wants to avoid libtiff to read the strile offset/count values from the
-``StripOffsets`` / ``StripByteCounts`` or ``TileOffsets`` / ``TileByteCounts`` arrays.
-`inbuf` content must be writable (if bit reversal is needed).
+``StripOffsets`` / ``StripByteCounts`` or ``TileOffsets`` /
+``TileByteCounts`` arrays. `inbuf` content must be writable
+(if bit reversal is needed).
 
 
 Return values

@@ -31,7 +31,7 @@ The *row* value should be the row of the first row in the strip
 (*strip* × ``RowsPerStrip``, zero based).
 
 Note that the raster is assume to be organized such that the pixel at location
-(*x*, *y*) is *raster* [ *y* × *width* + *x* ]; with the raster origin in the 
+(*x*, *y*) is *raster* [ *y* × *width* + *x* ]; with the raster origin in the
 *lower-left hand corner* of the strip. That is bottom to top organization.
 When reading a partial last strip in the file the last line of the image will
 begin at the beginning of the buffer.
@@ -56,7 +56,7 @@ Palette image colormaps that appear to be incorrectly written as 8-bit values
 are automatically scaled to 16-bits.
 
 :c:func:`TIFFReadRGBAStrip` is just a wrapper around the more general
-:doc:`TIFFRGBAImage` facilities.  It's main advantage over the similar 
+:doc:`TIFFRGBAImage` facilities.  It's main advantage over the similar
 :c:func:`TIFFReadRGBAImage` function is that for large images a single
 buffer capable of holding the whole image doesn't need to be allocated,
 only enough for one strip.  The :c:func:`TIFFReadRGBATile` function

@@ -22,7 +22,7 @@ memory, storing the result in the user supplied RGBA *raster*.
 The raster is assumed to be an array of ``TileWidth`` × ``TileLength``
 32-bit entries, where ``TileWidth`` is the width of a tile
 (:c:macro:`TIFFTAG_TILEWIDTH`) and ``TileLength`` is the height of a
-tile (:c:macro:`TIFFTAG_TILELENGTH`). 
+tile (:c:macro:`TIFFTAG_TILELENGTH`).
 
 :c:func:`TIFFReadRGBATileExt` provides the parameter `stop_on_error`.
 Its behaviour is described at :doc:`TIFFReadRGBAImage`.
@@ -58,7 +58,7 @@ Palette image colormaps that appear to be incorrectly written as 8-bit
 values are automatically scaled to 16-bits.
 
 :c:func:`TIFFReadRGBATile` is just a wrapper around the more general
-:doc:`TIFFRGBAImage` facilities.  It's main advantage over the similar 
+:doc:`TIFFRGBAImage` facilities.  It's main advantage over the similar
 :c:func:`TIFFReadRGBAImage` function is that for large images a single
 buffer capable of holding the whole image doesn't need to be allocated,
 only enough for one tile.  The :c:func:`TIFFReadRGBAStrip` function

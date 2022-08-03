@@ -15,8 +15,9 @@ Synopsis
 Description
 -----------
 
-This provides read/write access to the TIFFTagMethods within the TIFF structure 
-to application code without giving access to the private TIFF structure.
+This provides read/write access to the TIFFTagMethods within the TIFF
+structure to application code without giving access to the private TIFF
+structure.
 
 Diagnostics
 -----------
