@@ -300,6 +300,7 @@ extern int _TIFFMergeFields(TIFF*, const TIFFField[], uint32_t);
 extern const TIFFField* _TIFFFindOrRegisterField(TIFF *, uint32_t, TIFFDataType);
 extern  TIFFField* _TIFFCreateAnonField(TIFF *, uint32_t, TIFFDataType);
 extern int _TIFFCheckFieldIsValidForCodec(TIFF *tif, ttag_t tag);
+extern int _TIFFCheckDirNumberAndOffset(TIFF *tif, uint16_t dirn, uint64_t diroff);
 
 #if defined(__cplusplus)
 }
