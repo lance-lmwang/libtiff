@@ -5004,7 +5004,7 @@ MissingRequired(TIFF* tif, const char* tagname)
  * directory numbers and offsets. This is a trick to prevent IFD looping.
  * The one can create TIFF file with looped directory pointers. We will
  * maintain a list of already seen directories and check every IFD offset
- * and its IFD number against that list. Howevert, the offset of an IFD number
+ * and its IFD number against that list. However, the offset of an IFD number
  * can change - e.g. when writing updates to file.
  * Returns 1 if all is ok; 0 if last directory or IFD loop is encountered,
  * or an error has occured.
@@ -5026,7 +5026,7 @@ _TIFFCheckDirNumberAndOffset(TIFF *tif, uint16_t dirn, uint64_t diroff)
 	 * - yes: check, if offset is at the same IFD number - if not, it is an IFD loop
 	 * -  no: add to list or update offset at that IFD number
 	 */
-	for (n = 0; n < tif->tif_dirnumber && tif->tif_dirlistoff; n++) {
+	for (n = 0; n < tif->tif_dirnumber && tif->tif_dirlistdirn && tif->tif_dirlistoff; n++) {
 		if (tif->tif_dirlistoff[n] == diroff) {
 			if (tif->tif_dirlistdirn[n] == dirn) {
 				return 1;
