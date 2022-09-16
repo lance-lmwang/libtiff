@@ -501,11 +501,11 @@ int
 TIFFRGBAImageGet(TIFFRGBAImage* img, uint32_t* raster, uint32_t w, uint32_t h)
 {
     if (img->get == NULL) {
-		TIFFErrorExt(img->tif->tif_clientdata, TIFFFileName(img->tif), "No \"get\" routine setup");
+		TIFFErrorExtR(img->tif, TIFFFileName(img->tif), "No \"get\" routine setup");
 		return (0);
 	}
 	if (img->put.any == NULL) {
-		TIFFErrorExt(img->tif->tif_clientdata, TIFFFileName(img->tif),
+		TIFFErrorExtR(img->tif, TIFFFileName(img->tif),
 		"No \"put\" routine setupl; probably can not handle image format");
 		return (0);
     }
@@ -532,7 +532,7 @@ TIFFReadRGBAImageOriented(TIFF* tif,
 			rwidth, img.height);
 		TIFFRGBAImageEnd(&img);
 	} else {
-		TIFFErrorExt(tif->tif_clientdata, TIFFFileName(tif), "%s", emsg);
+		TIFFErrorExtR(tif, TIFFFileName(tif), "%s", emsg);
 		ok = 0;
     }
     return (ok);
@@ -637,7 +637,7 @@ gtTileContig(TIFFRGBAImage* img, uint32_t* raster, uint32_t w, uint32_t h)
 
     bufsize = TIFFTileSize(tif);
     if (bufsize == 0) {
-        TIFFErrorExt(tif->tif_clientdata, TIFFFileName(tif), "%s", "No space for tile buffer");
+        TIFFErrorExtR(tif, TIFFFileName(tif), "%s", "No space for tile buffer");
         return (0);
     }
 
@@ -647,7 +647,7 @@ gtTileContig(TIFFRGBAImage* img, uint32_t* raster, uint32_t w, uint32_t h)
     flip = setorientation(img);
     if (flip & FLIP_VERTICALLY) {
         if ((tw + w) > INT_MAX) {
-            TIFFErrorExt(tif->tif_clientdata, TIFFFileName(tif), "%s", "unsupported tile size (too wide)");
+            TIFFErrorExtR(tif, TIFFFileName(tif), "%s", "unsupported tile size (too wide)");
             return (0);
         }
         y = h - 1;
@@ -655,7 +655,7 @@ gtTileContig(TIFFRGBAImage* img, uint32_t* raster, uint32_t w, uint32_t h)
     }
     else {
         if (tw > (INT_MAX + w)) {
-            TIFFErrorExt(tif->tif_clientdata, TIFFFileName(tif), "%s", "unsupported tile size (too wide)");
+            TIFFErrorExtR(tif, TIFFFileName(tif), "%s", "unsupported tile size (too wide)");
             return (0);
         }
         y = 0;
@@ -775,7 +775,7 @@ gtTileSeparate(TIFFRGBAImage* img, uint32_t* raster, uint32_t w, uint32_t h)
 	flip = setorientation(img);
 	if (flip & FLIP_VERTICALLY) {
 		if ((tw + w) > INT_MAX) {
-            TIFFErrorExt(tif->tif_clientdata, TIFFFileName(tif), "%s", "unsupported tile size (too wide)");
+            TIFFErrorExtR(tif, TIFFFileName(tif), "%s", "unsupported tile size (too wide)");
             return (0);
         }
 		y = h - 1;
@@ -783,7 +783,7 @@ gtTileSeparate(TIFFRGBAImage* img, uint32_t* raster, uint32_t w, uint32_t h)
 	}
 	else {
 		if (tw > (INT_MAX + w)) {
-            TIFFErrorExt(tif->tif_clientdata, TIFFFileName(tif), "%s", "unsupported tile size (too wide)");
+            TIFFErrorExtR(tif, TIFFFileName(tif), "%s", "unsupported tile size (too wide)");
             return (0);
         }
 		y = 0;
@@ -945,7 +945,7 @@ gtStripContig(TIFFRGBAImage* img, uint32_t* raster, uint32_t w, uint32_t h)
 
 	TIFFGetFieldDefaulted(tif, TIFFTAG_YCBCRSUBSAMPLING, &subsamplinghor, &subsamplingver);
 	if( subsamplingver == 0 ) {
-		TIFFErrorExt(tif->tif_clientdata, TIFFFileName(tif), "Invalid vertical YCbCr subsampling");
+		TIFFErrorExtR(tif, TIFFFileName(tif), "Invalid vertical YCbCr subsampling");
 		return (0);
 	}
 	
@@ -954,7 +954,7 @@ gtStripContig(TIFFRGBAImage* img, uint32_t* raster, uint32_t w, uint32_t h)
 	flip = setorientation(img);
 	if (flip & FLIP_VERTICALLY) {
 		if ( w > INT_MAX ) {
-        	TIFFErrorExt(tif->tif_clientdata, TIFFFileName(tif), "Width overflow");
+        	TIFFErrorExtR(tif, TIFFFileName(tif), "Width overflow");
 			return (0);
 		}
 		y = h - 1;
@@ -979,7 +979,7 @@ gtStripContig(TIFFRGBAImage* img, uint32_t* raster, uint32_t w, uint32_t h)
 		temp = (row + img->row_offset)%rowsperstrip + nrowsub;
 		if( scanline > 0 && temp > (size_t)(TIFF_TMSIZE_T_MAX / scanline) )
 		{
-			TIFFErrorExt(tif->tif_clientdata, TIFFFileName(tif), "Integer overflow in gtStripContig");
+			TIFFErrorExtR(tif, TIFFFileName(tif), "Integer overflow in gtStripContig");
 			return 0;
 		}
 		if (_TIFFReadEncodedStripAndAllocBuffer(tif,
@@ -1054,7 +1054,7 @@ gtStripSeparate(TIFFRGBAImage* img, uint32_t* raster, uint32_t w, uint32_t h)
 	flip = setorientation(img);
 	if (flip & FLIP_VERTICALLY) {
 		if ( w > INT_MAX ) {
-        	TIFFErrorExt(tif->tif_clientdata, TIFFFileName(tif), "Width overflow");
+        	TIFFErrorExtR(tif, TIFFFileName(tif), "Width overflow");
 			return (0);
 		}
 		y = h - 1;
@@ -1090,7 +1090,7 @@ gtStripSeparate(TIFFRGBAImage* img, uint32_t* raster, uint32_t w, uint32_t h)
                 temp = (row + img->row_offset)%rowsperstrip + nrow;
                 if( scanline > 0 && temp > (size_t)(TIFF_TMSIZE_T_MAX / scanline) )
                 {
-                        TIFFErrorExt(tif->tif_clientdata, TIFFFileName(tif), "Integer overflow in gtStripSeparate");
+                        TIFFErrorExtR(tif, TIFFFileName(tif), "Integer overflow in gtStripSeparate");
                         return 0;
                 }
                 if( buf == NULL )
@@ -2270,7 +2270,7 @@ initYCbCrConversion(TIFFRGBAImage* img)
 		    + 3*256*sizeof (int32_t)
 		    );
 		if (img->ycbcr == NULL) {
-			TIFFErrorExt(img->tif->tif_clientdata, module,
+			TIFFErrorExtR(img->tif, module,
 			    "No space for YCbCr->RGB conversion state");
 			return (0);
 		}
@@ -2287,7 +2287,7 @@ initYCbCrConversion(TIFFRGBAImage* img)
             luma[1] == 0.0 ||
             luma[2] != luma[2] )
         {
-            TIFFErrorExt(img->tif->tif_clientdata, module,
+            TIFFErrorExtR(img->tif, module,
                 "Invalid values for YCbCrCoefficients tag");
             return (0);
         }
@@ -2299,7 +2299,7 @@ initYCbCrConversion(TIFFRGBAImage* img)
             !isInRefBlackWhiteRange(refBlackWhite[4]) ||
             !isInRefBlackWhiteRange(refBlackWhite[5]) )
         {
-            TIFFErrorExt(img->tif->tif_clientdata, module,
+            TIFFErrorExtR(img->tif, module,
                 "Invalid values for ReferenceBlackWhite tag");
             return (0);
         }
@@ -2319,7 +2319,7 @@ initCIELabConversion(TIFFRGBAImage* img)
 
 	TIFFGetFieldDefaulted(img->tif, TIFFTAG_WHITEPOINT, &whitePoint);
 	if (whitePoint[1] == 0.0f ) {
-		TIFFErrorExt(img->tif->tif_clientdata, module,
+		TIFFErrorExtR(img->tif, module,
 		    "Invalid value for WhitePoint tag.");
 		return NULL;
         }
@@ -2328,7 +2328,7 @@ initCIELabConversion(TIFFRGBAImage* img)
 		img->cielab = (TIFFCIELabToRGB *)
 			_TIFFmalloc(sizeof(TIFFCIELabToRGB));
 		if (!img->cielab) {
-			TIFFErrorExt(img->tif->tif_clientdata, module,
+			TIFFErrorExtR(img->tif, module,
 			    "No space for CIE L*a*b*->RGB conversion state.");
 			return NULL;
 		}
@@ -2339,7 +2339,7 @@ initCIELabConversion(TIFFRGBAImage* img)
 	refWhite[2] = (1.0F - whitePoint[0] - whitePoint[1])
 		      / whitePoint[1] * refWhite[1];
 	if (TIFFCIELabToRGBInit(img->cielab, &display_sRGB, refWhite) < 0) {
-		TIFFErrorExt(img->tif->tif_clientdata, module,
+		TIFFErrorExtR(img->tif, module,
 		    "Failed to initialize CIE L*a*b*->RGB conversion state.");
 		_TIFFfree(img->cielab);
 		return NULL;
@@ -2374,7 +2374,7 @@ makebwmap(TIFFRGBAImage* img)
     img->BWmap = (uint32_t**) _TIFFmalloc(
 	256*sizeof (uint32_t *) + (256 * nsamples * sizeof(uint32_t)));
     if (img->BWmap == NULL) {
-		TIFFErrorExt(img->tif->tif_clientdata, TIFFFileName(img->tif), "No space for B&W mapping table");
+		TIFFErrorExtR(img->tif, TIFFFileName(img->tif), "No space for B&W mapping table");
 		return (0);
     }
     p = (uint32_t*)(img->BWmap + 256);
@@ -2431,7 +2431,7 @@ setupMap(TIFFRGBAImage* img)
 
     img->Map = (TIFFRGBValue*) _TIFFmalloc((range+1) * sizeof (TIFFRGBValue));
     if (img->Map == NULL) {
-		TIFFErrorExt(img->tif->tif_clientdata, TIFFFileName(img->tif),
+		TIFFErrorExtR(img->tif, TIFFFileName(img->tif),
 			"No space for photometric conversion table");
 		return (0);
     }
@@ -2510,7 +2510,7 @@ makecmap(TIFFRGBAImage* img)
     img->PALmap = (uint32_t**) _TIFFmalloc(
 	256*sizeof (uint32_t *) + (256 * nsamples * sizeof(uint32_t)));
     if (img->PALmap == NULL) {
-		TIFFErrorExt(img->tif->tif_clientdata, TIFFFileName(img->tif), "No space for Palette mapping table");
+		TIFFErrorExtR(img->tif, TIFFFileName(img->tif), "No space for Palette mapping table");
 		return (0);
 	}
     p = (uint32_t*)(img->PALmap + 256);
@@ -2575,7 +2575,7 @@ buildMap(TIFFRGBAImage* img)
 	if (checkcmap(img) == 16)
 	    cvtcmap(img);
 	else
-	    TIFFWarningExt(img->tif->tif_clientdata, TIFFFileName(img->tif), "Assuming 8-bit colormap");
+	    TIFFWarningExtR(img->tif, TIFFFileName(img->tif), "Assuming 8-bit colormap");
 	/*
 	 * Use mapping table and colormap to construct
 	 * unpacking tables for samples < 8 bits.
@@ -2824,7 +2824,7 @@ BuildMapUaToAa(TIFFRGBAImage* img)
 	img->UaToAa=_TIFFmalloc(65536);
 	if (img->UaToAa==NULL)
 	{
-		TIFFErrorExt(img->tif->tif_clientdata,module,"Out of memory");
+		TIFFErrorExtR(img->tif,module,"Out of memory");
 		return(0);
 	}
 	m=img->UaToAa;
@@ -2846,7 +2846,7 @@ BuildMapBitdepth16To8(TIFFRGBAImage* img)
 	img->Bitdepth16To8=_TIFFmalloc(65536);
 	if (img->Bitdepth16To8==NULL)
 	{
-		TIFFErrorExt(img->tif->tif_clientdata,module,"Out of memory");
+		TIFFErrorExtR(img->tif,module,"Out of memory");
 		return(0);
 	}
 	m=img->Bitdepth16To8;
@@ -2882,7 +2882,7 @@ TIFFReadRGBAStripExt(TIFF* tif, uint32_t row, uint32_t * raster, int stop_on_err
 
     if( TIFFIsTiled( tif ) )
     {
-		TIFFErrorExt(tif->tif_clientdata, TIFFFileName(tif),
+		TIFFErrorExtR(tif, TIFFFileName(tif),
                   "Can't use TIFFReadRGBAStrip() with tiled file.");
 	return (0);
     }
@@ -2890,7 +2890,7 @@ TIFFReadRGBAStripExt(TIFF* tif, uint32_t row, uint32_t * raster, int stop_on_err
     TIFFGetFieldDefaulted(tif, TIFFTAG_ROWSPERSTRIP, &rowsperstrip);
     if( (row % rowsperstrip) != 0 )
     {
-		TIFFErrorExt(tif->tif_clientdata, TIFFFileName(tif),
+		TIFFErrorExtR(tif, TIFFFileName(tif),
 				"Row passed to TIFFReadRGBAStrip() must be first in a strip.");
 		return (0);
     }
@@ -2909,7 +2909,7 @@ TIFFReadRGBAStripExt(TIFF* tif, uint32_t row, uint32_t * raster, int stop_on_err
         
 	TIFFRGBAImageEnd(&img);
     } else {
-		TIFFErrorExt(tif->tif_clientdata, TIFFFileName(tif), "%s", emsg);
+		TIFFErrorExtR(tif, TIFFFileName(tif), "%s", emsg);
 		ok = 0;
     }
     
@@ -2947,7 +2947,7 @@ TIFFReadRGBATileExt(TIFF* tif, uint32_t col, uint32_t row, uint32_t * raster, in
     
     if( !TIFFIsTiled( tif ) )
     {
-		TIFFErrorExt(tif->tif_clientdata, TIFFFileName(tif),
+		TIFFErrorExtR(tif, TIFFFileName(tif),
 				  "Can't use TIFFReadRGBATile() with striped file.");
 		return (0);
     }
@@ -2956,7 +2956,7 @@ TIFFReadRGBATileExt(TIFF* tif, uint32_t col, uint32_t row, uint32_t * raster, in
     TIFFGetFieldDefaulted(tif, TIFFTAG_TILELENGTH, &tile_ysize);
     if( (col % tile_xsize) != 0 || (row % tile_ysize) != 0 )
     {
-		TIFFErrorExt(tif->tif_clientdata, TIFFFileName(tif),
+		TIFFErrorExtR(tif, TIFFFileName(tif),
                   "Row/col passed to TIFFReadRGBATile() must be top"
                   "left corner of a tile.");
 	return (0);
@@ -2968,7 +2968,7 @@ TIFFReadRGBATileExt(TIFF* tif, uint32_t col, uint32_t row, uint32_t * raster, in
     
     if (!TIFFRGBAImageOK(tif, emsg) 
 	|| !TIFFRGBAImageBegin(&img, tif, stop_on_error, emsg)) {
-	    TIFFErrorExt(tif->tif_clientdata, TIFFFileName(tif), "%s", emsg);
+	    TIFFErrorExtR(tif, TIFFFileName(tif), "%s", emsg);
 	    return( 0 );
     }
 
