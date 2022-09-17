@@ -1814,6 +1814,24 @@ TIFFSetDirectory(TIFF* tif, uint16_t dirn)
 int
 TIFFSetSubDirectory(TIFF* tif, uint64_t diroff)
 {
+	/* Match nextdiroff and curdir for consistent IFD-loop checking. 
+	 * Only with TIFFSetSubDirectory() the IFD list can be corrupted with invalid offsets.
+	 */
+	uint16_t curdir = 0;
+	if (diroff == 0) {
+		/* Special case to invalidate the tif_lastdiroff member. */
+		tif->tif_curdir = 65535;
+	} else {
+		if (!_TIFFGetDirNumberFromOffset(tif, diroff, &curdir)) {
+			/* Non-existing (invalid) offsets should not be read by TIFFReadDirectory() */
+			TIFFErrorExt(tif->tif_clientdata, "TIFFSetSubDirectory",
+				"Invalid directory offset 0x%"PRIx64" (%"PRIu64"). Directory is not read", diroff, diroff);
+			return 0;
+		}
+		/* -1 because TIFFReadDirectory() will increment tif_curdir. */
+		tif->tif_curdir = curdir - 1;
+	}
+
 	tif->tif_nextdiroff = diroff;
 	return (TIFFReadDirectory(tif));
 }

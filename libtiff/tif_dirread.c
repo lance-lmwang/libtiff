@@ -3890,16 +3890,14 @@ TIFFReadDirectory(TIFF* tif)
 
 	if (tif->tif_nextdiroff == 0)
 		return 0;           /* last offset, thus no checking necessary */
-	if (!_TIFFCheckDirNumberAndOffset(tif, tif->tif_curdir + 1, tif->tif_nextdiroff)) {
+
+	nextdiroff = tif->tif_nextdiroff;
+	/* tif_curdir++ and tif_nextdiroff should only be updated after SUCCESSFUL reading of the directory. Otherwise, invalid IFD offsets could corrupt the IFD list. */
+	if (!_TIFFCheckDirNumberAndOffset(tif, tif->tif_curdir + 1, nextdiroff)) {
 		TIFFWarningExt(tif->tif_clientdata, module,
-			"Didn't read next directory due to IFD looping");
+			"Didn't read next directory due to IFD looping at offset 0x%"PRIx64" (%"PRIu64") to offset 0x%"PRIx64" (%"PRIu64")", tif->tif_diroff, tif->tif_diroff, nextdiroff, nextdiroff);
 		return 0;           /* bad offset (IFD looping) */
 	}
-	
-	tif->tif_diroff=tif->tif_nextdiroff;
-	(*tif->tif_cleanup)(tif);   /* cleanup any previous compression state */
-	tif->tif_curdir++;
-	nextdiroff = tif->tif_nextdiroff;
 	dircount=TIFFFetchDirectory(tif,nextdiroff,&dir,&tif->tif_nextdiroff);
 	if (!dircount)
 	{
@@ -3907,6 +3905,11 @@ TIFFReadDirectory(TIFF* tif)
 		    "Failed to read directory at offset %" PRIu64, nextdiroff);
 		return 0;
 	}
+	/* Set global values after a valid directory has been fetched.
+	 * tif_diroff is already set to nextdiroff in TIFFFetchDirectory() if successful. */
+	(*tif->tif_cleanup)(tif);   /* cleanup any previous compression state */
+	tif->tif_curdir++;
+
 	TIFFReadDirectoryCheckOrder(tif,dir,dircount);
 
         /*
@@ -5080,6 +5083,51 @@ _TIFFCheckDirNumberAndOffset(TIFF *tif, uint16_t dirn, uint64_t diroff)
 
 	return 1;
 }	/* --- _TIFFCheckDirNumberAndOffset() ---*/
+
+/*
+ * Retrieve the matching IFD directory number of a given IFD offset
+ * from the list of directories already seen.
+ * Returns 1 if the offset was in the list and the directory number
+ * can be returned.
+ * Otherwise returns 0 or if an error occured.
+ */
+int
+_TIFFGetDirNumberFromOffset(TIFF *tif, uint64_t diroff, uint16_t* dirn)
+{
+	uint16_t n;
+	uint16_t ndirs = 0;
+
+	if (diroff == 0)			/* no more directories */
+		return 0;
+	if (tif->tif_dirnumber == 65535) {
+		TIFFErrorExt(tif->tif_clientdata, "_TIFFGetDirNumberFromOffset",
+			"Cannot handle more than 65535 TIFF directories");
+		return 0;
+	}
+
+	/* Check if offset is already in the list and return matching directory number.
+	 * Otherwise update IFD list using TIFFNumberOfDirectories() 
+	 * and search again in IFD list.
+	 */
+	for (n = 0; n < tif->tif_dirnumber && tif->tif_dirlistoff && tif->tif_dirlistdirn; n++) {
+		if (tif->tif_dirlistoff[n] == diroff) {
+			*dirn = tif->tif_dirlistdirn[n];
+			return 1;
+		}
+	}
+	ndirs = TIFFNumberOfDirectories(tif);
+	for (n = 0; n < tif->tif_dirnumber && tif->tif_dirlistoff && tif->tif_dirlistdirn; n++) {
+		if (tif->tif_dirlistoff[n] == diroff) {
+			*dirn = tif->tif_dirlistdirn[n];
+			return 1;
+		}
+	}
+	TIFFWarningExt(tif->tif_clientdata, "_TIFFGetDirNumberFromOffset",
+		"IFD offset 0x%"PRIx64" (%"PRIu64") could not be found in IFD directoy list with %"PRIu16" directory entries",
+		diroff, diroff, ndirs);
+	return 0;
+} /*--- _TIFFGetDirNumberFromOffset() ---*/
+
 
 /*
  * Check the count field of a directory entry against a known value.  The
