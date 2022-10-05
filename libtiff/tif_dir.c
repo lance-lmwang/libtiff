@@ -1815,25 +1815,41 @@ int
 TIFFSetSubDirectory(TIFF* tif, uint64_t diroff)
 {
 	/* Match nextdiroff and curdir for consistent IFD-loop checking. 
-	 * Only with TIFFSetSubDirectory() the IFD list can be corrupted with invalid offsets.
+	 * Only with TIFFSetSubDirectory() the IFD list can be corrupted with invalid offsets
+	 * within the main IFD tree.
+	 * In the case of several subIFDs of a main image, 
+	 * there are two possibilities that are not even mutually exclusive.
+	 * a.) The subIFD tag contains an array with all offsets of the subIFDs.
+	 * b.) The SubIFDs are concatenated with their NextIFD parameters.
+	 * (refer to https://www.awaresystems.be/imaging/tiff/specification/TIFFPM6.pdf.)
 	 */
+	int retval;
 	uint16_t curdir = 0;
+	int8_t probablySubIFD = 0;
 	if (diroff == 0) {
 		/* Special case to invalidate the tif_lastdiroff member. */
 		tif->tif_curdir = 65535;
 	} else {
 		if (!_TIFFGetDirNumberFromOffset(tif, diroff, &curdir)) {
-			/* Non-existing (invalid) offsets should not be read by TIFFReadDirectory() */
-			TIFFErrorExt(tif->tif_clientdata, "TIFFSetSubDirectory",
-				"Invalid directory offset 0x%"PRIx64" (%"PRIu64"). Directory is not read", diroff, diroff);
-			return 0;
+			/* Non-existing offsets might point to a SubIFD or invalid IFD.*/
+			probablySubIFD = 1;
 		}
 		/* -1 because TIFFReadDirectory() will increment tif_curdir. */
 		tif->tif_curdir = curdir - 1;
 	}
 
 	tif->tif_nextdiroff = diroff;
-	return (TIFFReadDirectory(tif));
+	retval = TIFFReadDirectory(tif);
+	/* If failed, curdir was not incremented in TIFFReadDirectory(), so set it back. */
+	if (!retval )tif->tif_curdir++; 
+	if (retval && probablySubIFD) {
+		/* Reset IFD list to start new one for SubIFD chain and also start SubIFD chain with tif_curdir=0. */
+		tif->tif_dirnumber = 0; 
+		tif->tif_curdir = 0; /* first directory of new chain */
+		/* add this offset to new IFD list */
+		_TIFFCheckDirNumberAndOffset(tif, tif->tif_curdir, diroff);
+	}
+	return (retval);
 }
 
 /*
@@ -1857,6 +1873,8 @@ TIFFLastDirectory(TIFF* tif)
 
 /*
  * Unlink the specified directory from the directory chain.
+ * Note: First directory starts with number dirn=1. 
+ * This is different to TIFFSetDirectory() where the first directory starts with zero.
  */
 int
 TIFFUnlinkDirectory(TIFF* tif, uint16_t dirn)
@@ -1887,7 +1905,7 @@ TIFFUnlinkDirectory(TIFF* tif, uint16_t dirn)
 		nextdir = tif->tif_header.big.tiff_diroff;
 		off = 8;
 	}
-	nextdirnum = tif->tif_curdir;
+	nextdirnum = 0;		/* First directory is dirn=0 */
 
 	for (n = dirn-1; n > 0; n--) {
 		if (nextdir == 0) {

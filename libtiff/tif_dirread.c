@@ -3888,8 +3888,11 @@ TIFFReadDirectory(TIFF* tif)
     int bitspersample_read = FALSE;
         int color_channels;
 
-	if (tif->tif_nextdiroff == 0)
+	if (tif->tif_nextdiroff == 0) {
+		/* In this special case, tif_diroff needs also to be set to 0. */
+		tif->tif_diroff = tif->tif_nextdiroff;
 		return 0;           /* last offset, thus no checking necessary */
+	}
 
 	nextdiroff = tif->tif_nextdiroff;
 	/* tif_curdir++ and tif_nextdiroff should only be updated after SUCCESSFUL reading of the directory. Otherwise, invalid IFD offsets could corrupt the IFD list. */
@@ -3906,9 +3909,9 @@ TIFFReadDirectory(TIFF* tif)
 		return 0;
 	}
 	/* Set global values after a valid directory has been fetched.
-	 * tif_diroff is already set to nextdiroff in TIFFFetchDirectory() if successful. */
-	(*tif->tif_cleanup)(tif);   /* cleanup any previous compression state */
+	 * tif_diroff is already set to nextdiroff in TIFFFetchDirectory() in the beginning. */
 	tif->tif_curdir++;
+	(*tif->tif_cleanup)(tif);   /* cleanup any previous compression state */
 
 	TIFFReadDirectoryCheckOrder(tif,dir,dircount);
 
@@ -5095,7 +5098,6 @@ int
 _TIFFGetDirNumberFromOffset(TIFF *tif, uint64_t diroff, uint16_t* dirn)
 {
 	uint16_t n;
-	uint16_t ndirs = 0;
 
 	if (diroff == 0)			/* no more directories */
 		return 0;
@@ -5115,16 +5117,13 @@ _TIFFGetDirNumberFromOffset(TIFF *tif, uint64_t diroff, uint16_t* dirn)
 			return 1;
 		}
 	}
-	ndirs = TIFFNumberOfDirectories(tif);
+	TIFFNumberOfDirectories(tif);
 	for (n = 0; n < tif->tif_dirnumber && tif->tif_dirlistoff && tif->tif_dirlistdirn; n++) {
 		if (tif->tif_dirlistoff[n] == diroff) {
 			*dirn = tif->tif_dirlistdirn[n];
 			return 1;
 		}
 	}
-	TIFFWarningExt(tif->tif_clientdata, "_TIFFGetDirNumberFromOffset",
-		"IFD offset 0x%"PRIx64" (%"PRIu64") could not be found in IFD directoy list with %"PRIu16" directory entries",
-		diroff, diroff, ndirs);
 	return 0;
 } /*--- _TIFFGetDirNumberFromOffset() ---*/
 
