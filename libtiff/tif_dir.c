@@ -1717,8 +1717,7 @@ TIFFAdvanceDirectory(TIFF* tif, uint64_t* nextdiroff, uint64_t* off, uint16_t* n
 				(void) TIFFSeekFile(tif,
 				    dircount16*20, SEEK_CUR);
 			if (!ReadOK(tif, nextdiroff, sizeof (uint64_t))) {
-				TIFFErrorExtR(tif, module,
-                                             "%s: Error fetching directory link",
+				TIFFErrorExtR(tif, module, "%s: Error fetching directory link",
 				    tif->tif_name);
 				return (0);
 			}

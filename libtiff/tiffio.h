@@ -480,8 +480,7 @@ extern TIFF* TIFFClientOpenEx(const char*, const char*,
 	    TIFFSeekProc, TIFFCloseProc,
 	    TIFFSizeProc,
 	    TIFFMapFileProc, TIFFUnmapFileProc,
-		TIFFErrorHandlerExtR, TIFFErrorHandlerExtR);
-
+            TIFFErrorHandlerExtR, TIFFErrorHandlerExtR);
 
 extern TIFFExtendProc TIFFSetTagExtender(TIFFExtendProc);
 extern uint32_t TIFFComputeTile(TIFF* tif, uint32_t x, uint32_t y, uint32_t z, uint16_t s);
