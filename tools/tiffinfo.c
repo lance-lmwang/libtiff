@@ -65,8 +65,8 @@ static tmsize_t maxMalloc = DEFAULT_MAX_MALLOC;
 static void
 PrivateErrorHandler(const char* module, const char* fmt, va_list ap)
 {
-		if (old_error_handler)
-				(*old_error_handler)(module,fmt,ap);
+        if (old_error_handler)
+                (*old_error_handler)(module,fmt,ap);
 	status = EXIT_FAILURE;
 }
 
@@ -83,11 +83,6 @@ main(int argc, char* argv[])
 	long flags = 0;
 	uint64_t diroff = 0;
 	int chopstrips = 0;		/* disable strip chopping */
-
-	int i;
-	uint16_t nCount;
-	void *vPtr;
-	uint64_t *subIFDoffsets = NULL;
 
 	while ((c = getopt(argc, argv, "f:o:M:cdDSjilmrsvwz0123456789h")) != -1)
 		switch (c) {
@@ -141,12 +136,12 @@ main(int argc, char* argv[])
 			break;
 		case 'h':
 			usage(EXIT_SUCCESS);
-			/*NOTREACHED*/
-			break;
+                        /*NOTREACHED*/
+                        break;
 		case '?':
 			usage(EXIT_FAILURE);
 			/*NOTREACHED*/
-			break;
+                        break;
 		}
 	if (optind >= argc)
 		usage(EXIT_FAILURE);
@@ -156,7 +151,7 @@ main(int argc, char* argv[])
 	multiplefiles = (argc - optind > 1);
 	for (; optind < argc; optind++) {
 		if (multiplefiles)
-			printf("%s:\n", argv[optind]);
+			printf("File %s:\n", argv[optind]);
 		tif = TIFFOpen(argv[optind], chopstrips ? "rC" : "rc");
 		if (tif != NULL) {
 			if (dirnum != -1) {
@@ -166,9 +161,7 @@ main(int argc, char* argv[])
 				if (TIFFSetSubDirectory(tif, diroff))
 					tiffinfo(tif, order, flags, 1);
 			} else {
-				int nloop = 0;
 				do {
-					printf("\n======= Loop %d =======\n", nloop);
 					toff_t offset=0;
 					uint16_t curdir =  TIFFCurrentDirectory(tif);
 					printf("=== TIFF directory %d ===\n", curdir);
@@ -191,19 +184,24 @@ main(int argc, char* argv[])
 						}
 					}
 					/*-- Check for SubIFDs --*/
+					uint16_t nCount;
+					void *vPtr;
+					uint64_t *subIFDoffsets = NULL;
 					if (TIFFGetField(tif, TIFFTAG_SUBIFD, &nCount, &vPtr)) {
 						if (nCount > 0) {
 							subIFDoffsets = malloc(nCount * sizeof(uint64_t));
 							if (subIFDoffsets != NULL) {
 								memcpy(subIFDoffsets, vPtr, nCount * sizeof(subIFDoffsets[0]));
-								printf("--- SubIFD image descriptors within directory %d with array of %d SubIFDs ---\n", curdir, nCount);
-								for (i = 0; i < nCount; i++) {
+								printf("--- SubIFD image descriptor tag within TIFF directory %d with array of %d SubIFD chains ---\n", curdir, nCount);
+								for (int i = 0; i < nCount; i++) {
 									offset = subIFDoffsets[i];
-									printf("  --- SubIFD chain %d at offset 0x%"PRIx64" (%"PRIu64"):\n", i, offset, offset);
+									int s = 0;
 									if (TIFFSetSubDirectory(tif, offset)) {
 										/* print info and check for SubIFD chain */
 										do {
+											printf("--- SubIFD %d of chain %d at offset 0x%"PRIx64" (%"PRIu64"):\n", s, i, offset, offset);
 											tiffinfo(tif, order, flags, 0);
+											s++;
 										} while (TIFFReadDirectory(tif));
 									}
 								}
@@ -215,8 +213,7 @@ main(int argc, char* argv[])
 							}
 						}
 					}
-
-					printf("======= End of Loop %d ======= \n\n", nloop++);
+					printf("\n");
 				} while (TIFFReadDirectory(tif));
 			}
 			TIFFClose(tif);
@@ -250,8 +247,8 @@ usage(int code)
 {
 	FILE * out = (code == EXIT_SUCCESS) ? stdout : stderr;
 
-		fprintf(out, "%s\n\n", TIFFGetVersion());
-		fprintf(out, "%s", usage_info);
+        fprintf(out, "%s\n\n", TIFFGetVersion());
+        fprintf(out, "%s", usage_info);
 	exit(code);
 }
 
@@ -281,10 +278,10 @@ TIFFReadContigStripData(TIFF* tif)
 	if (maxMalloc != 0 && stripsize > maxMalloc)
 	{
 		fprintf(stderr,
-				"Memory allocation attempt %" TIFF_SSIZE_FORMAT " over memory limit (%" TIFF_SSIZE_FORMAT ")\n",
-				stripsize, maxMalloc);
+		        "Memory allocation attempt %" TIFF_SSIZE_FORMAT " over memory limit (%" TIFF_SSIZE_FORMAT ")\n",
+		        stripsize, maxMalloc);
 		return;
-	}
+    }
 	buf = (unsigned char *)_TIFFmalloc(stripsize);
 	if (buf) {
 		uint32_t row, h=0;
@@ -294,7 +291,7 @@ TIFFReadContigStripData(TIFF* tif)
 		TIFFGetField(tif, TIFFTAG_ROWSPERSTRIP, &rowsperstrip);
 		for (row = 0; row < h; row += rowsperstrip) {
 			uint32_t nrow = (row + rowsperstrip > h ?
-				h-row : rowsperstrip);
+			    h-row : rowsperstrip);
 			tstrip_t strip = TIFFComputeStrip(tif, row, 0);
 			if (TIFFReadEncodedStrip(tif, strip, buf, nrow*scanline) < 0) {
 				if (stoponerr)
@@ -319,10 +316,10 @@ TIFFReadSeparateStripData(TIFF* tif)
 	if (maxMalloc != 0 && stripsize > maxMalloc)
 	{
 		fprintf(stderr,
-				"Memory allocation attempt %" TIFF_SSIZE_FORMAT " over memory limit (%" TIFF_SSIZE_FORMAT ")\n",
-				stripsize, maxMalloc);
+		        "Memory allocation attempt %" TIFF_SSIZE_FORMAT " over memory limit (%" TIFF_SSIZE_FORMAT ")\n",
+		        stripsize, maxMalloc);
 		return;
-	}
+    }
 	buf = (unsigned char *)_TIFFmalloc(stripsize);
 	if (buf) {
 		uint32_t row, h=0;
@@ -335,7 +332,7 @@ TIFFReadSeparateStripData(TIFF* tif)
 		for (row = 0; row < h; row += rowsperstrip) {
 			for (s = 0; s < samplesperpixel; s++) {
 				uint32_t nrow = (row + rowsperstrip > h ?
-					h-row : rowsperstrip);
+				    h-row : rowsperstrip);
 				tstrip_t strip = TIFFComputeStrip(tif, row, s);
 				if (TIFFReadEncodedStrip(tif, strip, buf, nrow*scanline) < 0) {
 					if (stoponerr)
@@ -353,7 +350,7 @@ TIFFReadSeparateStripData(TIFF* tif)
 
 static void
 ShowTile(uint32_t row, uint32_t col, tsample_t sample,
-		 unsigned char* pp, uint32_t nrow, tsize_t rowsize)
+         unsigned char* pp, uint32_t nrow, tsize_t rowsize)
 {
 	uint32_t cc;
 
@@ -362,7 +359,7 @@ ShowTile(uint32_t row, uint32_t col, tsample_t sample,
 		printf(",%" PRIu16, sample);
 	printf("):\n");
 	while (nrow-- > 0) {
-		for (cc = 0; cc < (uint32_t) rowsize; cc++) {
+	  for (cc = 0; cc < (uint32_t) rowsize; cc++) {
 			printf(" %02x", *pp++);
 			if (((cc+1) % 24) == 0)
 				putchar('\n');
@@ -381,10 +378,10 @@ TIFFReadContigTileData(TIFF* tif)
 	if (maxMalloc != 0 && tilesize > maxMalloc)
 	{
 		fprintf(stderr,
-				"Memory allocation attempt %" TIFF_SSIZE_FORMAT " over memory limit (%" TIFF_SSIZE_FORMAT ")\n",
-				tilesize, maxMalloc);
+		        "Memory allocation attempt %" TIFF_SSIZE_FORMAT " over memory limit (%" TIFF_SSIZE_FORMAT ")\n",
+		        tilesize, maxMalloc);
 		return;
-	}
+    }
 	buf = (unsigned char *)_TIFFmalloc(tilesize);
 	if (buf) {
 		uint32_t tw=0, th=0, w=0, h=0;
@@ -394,12 +391,12 @@ TIFFReadContigTileData(TIFF* tif)
 		TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &h);
 		TIFFGetField(tif, TIFFTAG_TILEWIDTH, &tw);
 		TIFFGetField(tif, TIFFTAG_TILELENGTH, &th);
-		if ( rowsize == 0 || th > (size_t) (tilesize / rowsize) )
-		{
-			fprintf(stderr, "Cannot display data: th * rowsize > tilesize\n");
-			_TIFFfree(buf);
-			return;
-		}
+                if ( rowsize == 0 || th > (size_t) (tilesize / rowsize) )
+        {
+            fprintf(stderr, "Cannot display data: th * rowsize > tilesize\n");
+            _TIFFfree(buf);
+            return;
+        }
 		for (row = 0; row < h; row += th) {
 			for (col = 0; col < w; col += tw) {
 				if (TIFFReadTile(tif, buf, col, row, 0, 0) < 0) {
@@ -413,7 +410,7 @@ TIFFReadContigTileData(TIFF* tif)
 	}
 	else {
 		fprintf(stderr, "Cannot allocate %" TIFF_SSIZE_FORMAT " bytes.\n",
-				tilesize);
+                tilesize);
 	}
 }
 
@@ -427,10 +424,10 @@ TIFFReadSeparateTileData(TIFF* tif)
 	if (maxMalloc != 0 && tilesize > maxMalloc)
 	{
 		fprintf(stderr,
-				"Memory allocation attempt %" TIFF_SSIZE_FORMAT " over memory limit (%" TIFF_SSIZE_FORMAT ")\n",
-				tilesize, maxMalloc);
+		        "Memory allocation attempt %" TIFF_SSIZE_FORMAT " over memory limit (%" TIFF_SSIZE_FORMAT ")\n",
+		        tilesize, maxMalloc);
 		return;
-	}
+    }
 	buf = (unsigned char *)_TIFFmalloc(tilesize);
 	if (buf) {
 		uint32_t tw=0, th=0, w=0, h=0;
@@ -442,12 +439,12 @@ TIFFReadSeparateTileData(TIFF* tif)
 		TIFFGetField(tif, TIFFTAG_TILEWIDTH, &tw);
 		TIFFGetField(tif, TIFFTAG_TILELENGTH, &th);
 		TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &samplesperpixel);
-		if ( rowsize == 0 || th > (size_t) (tilesize / rowsize) )
-		{
-			fprintf(stderr, "Cannot display data: th * rowsize > tilesize\n");
-			_TIFFfree(buf);
-			return;
-		}
+                if ( rowsize == 0 || th > (size_t) (tilesize / rowsize) )
+        {
+            fprintf(stderr, "Cannot display data: th * rowsize > tilesize\n");
+            _TIFFfree(buf);
+            return;
+        }
 		for (row = 0; row < h; row += th) {
 			for (col = 0; col < w; col += tw) {
 				for (s = 0; s < samplesperpixel; s++) {
@@ -463,7 +460,7 @@ TIFFReadSeparateTileData(TIFF* tif)
 	}
 	else {
 		fprintf(stderr, "Cannot allocate %" TIFF_SSIZE_FORMAT " bytes.\n",
-				tilesize);
+                tilesize);
 	}
 }
 
@@ -539,7 +536,7 @@ TIFFReadRawDataStriped(TIFF* tif, int bitrev)
 				if (newbuf == NULL) {
 					fprintf(stderr,
 					   "Cannot allocate buffer to read strip %"PRIu32"\n",
-						s);
+					    s);
 					break;
 				}
 				bufsize = (uint32_t) stripbc[s];
@@ -547,17 +544,17 @@ TIFFReadRawDataStriped(TIFF* tif, int bitrev)
 			}
 			if (TIFFReadRawStrip(tif, s, buf, (tmsize_t) stripbc[s]) < 0) {
 				fprintf(stderr, "Error reading strip %"PRIu32"\n",
-					s);
+				    s);
 				if (stoponerr)
 					break;
 			} else if (showdata) {
 				if (bitrev) {
 					TIFFReverseBits(buf, (tmsize_t)stripbc[s]);
 					printf("%s %"PRIu32": (bit reversed)\n ",
-						what, s);
+					    what, s);
 				} else
 					printf("%s %"PRIu32":\n ", what,
-						s);
+					    s);
 				if (showwords)
 					ShowRawWords((uint16_t*) buf, (uint32_t) stripbc[s] >> 1);
 				else
@@ -596,7 +593,7 @@ TIFFReadRawDataTiled(TIFF* tif, int bitrev)
 				if (newbuf == NULL) {
 					fprintf(stderr,
 					   "Cannot allocate buffer to read tile %"PRIu32"\n",
-						t);
+					    t);
 					break;
 				}
 				bufsize = (uint32_t) tilebc[t];
@@ -604,17 +601,17 @@ TIFFReadRawDataTiled(TIFF* tif, int bitrev)
 			}
 			if (TIFFReadRawTile(tif, t, buf, (tmsize_t)tilebc[t]) < 0) {
 				fprintf(stderr, "Error reading tile %"PRIu32"\n",
-					t);
+				    t);
 				if (stoponerr)
 					break;
 			} else if (showdata) {
 				if (bitrev) {
 					TIFFReverseBits(buf, (tmsize_t)tilebc[t]);
 					printf("%s %"PRIu32": (bit reversed)\n ",
-						what, t);
+					    what, t);
 				} else {
 					printf("%s %"PRIu32":\n ", what,
-						t);
+					    t);
 				}
 				if (showwords) {
 					ShowRawWords((uint16_t*) buf, (uint32_t)(tilebc[t] >> 1));
@@ -648,7 +645,7 @@ tiffinfo(TIFF* tif, uint16_t order, long flags, int is_image)
 		if (order) {
 			uint16_t o;
 			TIFFGetFieldDefaulted(tif,
-				TIFFTAG_FILLORDER, &o);
+			    TIFFTAG_FILLORDER, &o);
 			TIFFReadRawData(tif, o != order);
 		} else
 			TIFFReadRawData(tif, 0);
