@@ -448,17 +448,8 @@ extern int TIFFRGBAImageOK(TIFF*, char [1024]);
 extern int TIFFRGBAImageBegin(TIFFRGBAImage*, TIFF*, int, char [1024]);
 extern int TIFFRGBAImageGet(TIFFRGBAImage*, uint32_t*, uint32_t, uint32_t);
 extern void TIFFRGBAImageEnd(TIFFRGBAImage*);
-extern TIFF* TIFFOpen(const char*, const char*);
-# ifdef __WIN32__
-extern TIFF* TIFFOpenW(const wchar_t*, const char*);
-# endif /* __WIN32__ */
-extern TIFF* TIFFFdOpen(int, const char*, const char*);
-extern TIFF* TIFFClientOpen(const char*, const char*,
-	    thandle_t,
-	    TIFFReadWriteProc, TIFFReadWriteProc,
-	    TIFFSeekProc, TIFFCloseProc,
-	    TIFFSizeProc,
-	    TIFFMapFileProc, TIFFUnmapFileProc);
+
+
 extern const char* TIFFFileName(TIFF*);
 extern const char* TIFFSetFileName(TIFF*, const char *);
 extern void TIFFError(const char*, const char*, ...) TIFF_ATTRIBUTE((__format__ (__printf__,2,3)));
@@ -474,6 +465,26 @@ extern void TIFFWarningExtR(TIFF*, const char*, const char*, ...) TIFF_ATTRIBUTE
 extern void TIFFErrorExtR(TIFF*, const char*, const char*, ...) TIFF_ATTRIBUTE((__format__ (__printf__,3,4)));
 extern void TIFFSetErrorHandlerExtR(TIFF*, TIFFErrorHandlerExtR);
 extern void TIFFSetWarningHandlerExtR(TIFF*, TIFFErrorHandlerExtR);
+
+extern TIFF* TIFFOpen(const char*, const char*);
+# ifdef __WIN32__
+extern TIFF* TIFFOpenW(const wchar_t*, const char*);
+# endif /* __WIN32__ */
+extern TIFF* TIFFFdOpen(int, const char*, const char*);
+extern TIFF* TIFFClientOpen(const char*, const char*,
+	    thandle_t,
+	    TIFFReadWriteProc, TIFFReadWriteProc,
+	    TIFFSeekProc, TIFFCloseProc,
+	    TIFFSizeProc,
+	    TIFFMapFileProc, TIFFUnmapFileProc);
+extern TIFF* TIFFClientOpenEx(const char*, const char*,
+	    thandle_t,
+	    TIFFReadWriteProc, TIFFReadWriteProc,
+	    TIFFSeekProc, TIFFCloseProc,
+	    TIFFSizeProc,
+	    TIFFMapFileProc, TIFFUnmapFileProc,
+		TIFFErrorHandlerExtR, TIFFErrorHandlerExtR);
+
 
 extern TIFFExtendProc TIFFSetTagExtender(TIFFExtendProc);
 extern uint32_t TIFFComputeTile(TIFF* tif, uint32_t x, uint32_t y, uint32_t z, uint16_t s);

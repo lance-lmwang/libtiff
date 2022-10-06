@@ -78,9 +78,26 @@ TIFFClientOpen(
 	TIFFSizeProc sizeproc,
 	TIFFMapFileProc mapproc,
 	TIFFUnmapFileProc unmapproc
-)
+) {
+  return TIFFClientOpenEx(name, mode, clientdata, readproc, writeproc, seekproc, closeproc,
+                          sizeproc, mapproc, unmapproc, NULL, NULL);
+}
+
+TIFF*
+TIFFClientOpenEx(
+	const char* name, const char* mode,
+	thandle_t clientdata,
+	TIFFReadWriteProc readproc,
+	TIFFReadWriteProc writeproc,
+	TIFFSeekProc seekproc,
+	TIFFCloseProc closeproc,
+	TIFFSizeProc sizeproc,
+	TIFFMapFileProc mapproc,
+	TIFFUnmapFileProc unmapproc,
+	TIFFErrorHandlerExtR errorhandler,
+	TIFFErrorHandlerExtR warnhandler)
 {
-	static const char module[] = "TIFFClientOpen";
+	static const char module[] = "TIFFClientOpenEx";
 	TIFF *tif;
 	int m;
 	const char* cp;
@@ -128,25 +145,23 @@ TIFFClientOpen(
 	tif->tif_curstrip = (uint32_t) -1;	/* invalid strip */
 	tif->tif_row = (uint32_t) -1;		/* read/write pre-increment */
 	tif->tif_clientdata = clientdata;
-	if (!readproc || !writeproc || !seekproc || !closeproc || !sizeproc) {
-		TIFFErrorExt(clientdata, module,
-		    "One of the client procedures is NULL pointer.");
-		_TIFFfree(tif);
-		goto bad2;
-	}
 	tif->tif_readproc = readproc;
 	tif->tif_writeproc = writeproc;
 	tif->tif_seekproc = seekproc;
 	tif->tif_closeproc = closeproc;
 	tif->tif_sizeproc = sizeproc;
-	if (mapproc)
-		tif->tif_mapproc = mapproc;
-	else
-		tif->tif_mapproc = _tiffDummyMapProc;
-	if (unmapproc)
-		tif->tif_unmapproc = unmapproc;
-	else
-		tif->tif_unmapproc = _tiffDummyUnmapProc;
+	tif->tif_mapproc = mapproc ? mapproc : _tiffDummyMapProc;
+	tif->tif_unmapproc = unmapproc ? unmapproc : _tiffDummyUnmapProc;
+    tif->tif_errorhandler = errorhandler;
+    tif->tif_warnhandler = warnhandler;
+
+	if (!readproc || !writeproc || !seekproc || !closeproc || !sizeproc) {
+		TIFFErrorExtR(tif, module,
+		    "One of the client procedures is NULL pointer.");
+		_TIFFfree(tif);
+		goto bad2;
+	}
+
 	_TIFFSetDefaultCompressionState(tif);    /* setup default state */
 	/*
 	 * Default is to return data MSB2LSB and enable the
