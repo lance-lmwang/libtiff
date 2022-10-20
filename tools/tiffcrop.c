@@ -6382,7 +6382,7 @@ loadImage(TIFF* in, struct image_data *image, struct dump_opts *dump, unsigned c
 	TIFFError("loadImage", "Integer overflow when calculating buffer size");
 	exit(EXIT_FAILURE);
     }
-    buffsize_check = ((length * width * spp * bps) + 7);
+    buffsize_check = (((tmsize_t)length * width * spp * bps) + 7);
     if (length != ((buffsize_check - 7) / width / spp / bps))
     {
 	TIFFError("loadImage", "Integer overflow detected.");
@@ -6395,7 +6395,7 @@ loadImage(TIFF* in, struct image_data *image, struct dump_opts *dump, unsigned c
      * need a buffer, which is at least 3 bytes larger than the actual image.
      * Otherwise buffer-overflow might occur there.
      */
-    buffsize_check = length * (uint32_t)(((width * spp * bps) + 7) / 8);
+    buffsize_check = (tmsize_t)length * (uint32_t)(((width * spp * bps) + 7) / 8);
     if (buffsize < buffsize_check)
       {
       buffsize = buffsize_check;
