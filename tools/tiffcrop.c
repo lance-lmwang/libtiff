@@ -860,12 +860,12 @@ static int readContigTilesIntoBuffer (TIFF* in, uint8_t* buf,
 	      "Tilesize %"PRId64" is too small, using alternate calculation %"PRIu64,
               tilesize, tl * tile_rowsize);
 #endif
-    tile_buffsize = tl * tile_rowsize;
     if (tile_rowsize != 0 && (tmsize_t)tl > (TIFF_TMSIZE_T_MAX / tile_rowsize))
     {
     	TIFFError("readContigTilesIntoBuffer", "Integer overflow when calculating buffer size.");
         exit(EXIT_FAILURE);
     }
+    tile_buffsize = tl * tile_rowsize;
     }
 
   /* Add 3 padding bytes for extractContigSamplesShifted32bits */
@@ -1311,12 +1311,12 @@ static int writeBufferToContigTiles (TIFF* out, uint8_t* buf, uint32_t imageleng
 	      "Tilesize %"PRId64" is too small, using alternate calculation %"PRIu32,
               tilesize, tl * tile_rowsize);
 #endif
-    tile_buffsize = tl * tile_rowsize;
     if (tile_rowsize != 0 && (tmsize_t)tl > (TIFF_TMSIZE_T_MAX / tile_rowsize))
     {
 	TIFFError("writeBufferToContigTiles", "Integer overflow when calculating buffer size");
 	exit(EXIT_FAILURE);
     }
+    tile_buffsize = tl * tile_rowsize;
     }
 
   if( imagewidth == 0 ||
@@ -6335,21 +6335,21 @@ loadImage(TIFF* in, struct image_data *image, struct dump_opts *dump, unsigned c
 	TIFFError("loadImage", "File appears to be tiled, but the number of tiles, tile size, or tile rowsize is zero.");
 	exit(EXIT_FAILURE);
     }
-    buffsize = tlsize * ntiles;
     if (ntiles != 0 && tlsize > (tmsize_t)(TIFF_TMSIZE_T_MAX / ntiles))
     {
 	TIFFError("loadImage", "Integer overflow when calculating buffer size");
 	exit(EXIT_FAILURE);
     }
+    buffsize = tlsize * ntiles;
 
     if (buffsize < (tmsize_t)(ntiles * tl * tile_rowsize))
       {
-      buffsize = ntiles * tl * tile_rowsize;
       if (tl != 0 && tile_rowsize != 0 && ntiles > (TIFF_TMSIZE_T_MAX / tl / tile_rowsize))
       {
 	TIFFError("loadImage", "Integer overflow when calculating buffer size");
 	exit(EXIT_FAILURE);
       }
+      buffsize = ntiles * tl * tile_rowsize;
       
 #ifdef DEBUG2
       TIFFError("loadImage",
@@ -6376,18 +6376,12 @@ loadImage(TIFF* in, struct image_data *image, struct dump_opts *dump, unsigned c
 	exit(EXIT_FAILURE);
     }
 
-    buffsize = stsize * nstrips;
     if (nstrips != 0 && stsize > (tmsize_t)(TIFF_TMSIZE_T_MAX / nstrips))
     {
 	TIFFError("loadImage", "Integer overflow when calculating buffer size");
 	exit(EXIT_FAILURE);
     }
-    buffsize_check = (((tmsize_t)length * width * spp * bps) + 7);
-    if (width != 0 && spp != 0 && bps != 0 && length > (tmsize_t)((TIFF_TMSIZE_T_MAX - 7) / width / spp / bps))
-    {
-	TIFFError("loadImage", "Integer overflow detected.");
-	exit(EXIT_FAILURE);
-    }
+    buffsize = stsize * nstrips;
     /* The buffsize_check and the possible adaptation of buffsize 
      * has to account also for padding of each line to a byte boundary. 
      * This is assumed by mirrorImage() and rotateImage().
@@ -6395,6 +6389,12 @@ loadImage(TIFF* in, struct image_data *image, struct dump_opts *dump, unsigned c
      * need a buffer, which is at least 3 bytes larger than the actual image.
      * Otherwise buffer-overflow might occur there.
      */
+    if ( (spp != 0 && bps != 0 && width > (uint32_t)((UINT32_MAX - 7) / spp / bps)) ||
+         (width != 0 && length > (tmsize_t)(TIFF_TMSIZE_T_MAX / (uint32_t)(((width * spp * bps) + 7) / 8))) )
+    {
+	TIFFError("loadImage", "Integer overflow detected.");
+	exit(EXIT_FAILURE);
+    }
     buffsize_check = (tmsize_t)length * (uint32_t)(((width * spp * bps) + 7) / 8);
     if (buffsize < buffsize_check)
       {
