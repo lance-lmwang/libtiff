@@ -861,7 +861,7 @@ static int readContigTilesIntoBuffer (TIFF* in, uint8_t* buf,
               tilesize, tl * tile_rowsize);
 #endif
     tile_buffsize = tl * tile_rowsize;
-    if (tl != (tile_buffsize / tile_rowsize))
+    if (tile_rowsize != 0 && (tmsize_t)tl > (TIFF_TMSIZE_T_MAX / tile_rowsize))
     {
     	TIFFError("readContigTilesIntoBuffer", "Integer overflow when calculating buffer size.");
         exit(EXIT_FAILURE);
@@ -869,7 +869,7 @@ static int readContigTilesIntoBuffer (TIFF* in, uint8_t* buf,
     }
 
   /* Add 3 padding bytes for extractContigSamplesShifted32bits */
-  if( (size_t) tile_buffsize > 0xFFFFFFFFU - 3U )
+  if( (size_t) tile_buffsize > TIFF_TMSIZE_T_MAX - NUM_BUFF_OVERSIZE_BYTES)
   {
       TIFFError("readContigTilesIntoBuffer", "Integer overflow when calculating buffer size.");
       exit(EXIT_FAILURE);
@@ -1312,7 +1312,7 @@ static int writeBufferToContigTiles (TIFF* out, uint8_t* buf, uint32_t imageleng
               tilesize, tl * tile_rowsize);
 #endif
     tile_buffsize = tl * tile_rowsize;
-    if (tl != tile_buffsize / tile_rowsize)
+    if (tile_rowsize != 0 && (tmsize_t)tl > (TIFF_TMSIZE_T_MAX / tile_rowsize))
     {
 	TIFFError("writeBufferToContigTiles", "Integer overflow when calculating buffer size");
 	exit(EXIT_FAILURE);
@@ -5032,7 +5032,7 @@ static int readSeparateStripsIntoBuffer (TIFF *in, uint8_t *obuf, uint32_t lengt
   strips_per_sample = nstrips /spp;
 
   /* Add 3 padding bytes for combineSeparateSamples32bits */
-  if( (size_t) stripsize > 0xFFFFFFFFU - 3U )
+  if( (size_t) stripsize > TIFF_TMSIZE_T_MAX - NUM_BUFF_OVERSIZE_BYTES)
   {
       TIFFError("readSeparateStripsIntoBuffer", "Integer overflow when calculating buffer size.");
       exit(EXIT_FAILURE);
@@ -6336,7 +6336,7 @@ loadImage(TIFF* in, struct image_data *image, struct dump_opts *dump, unsigned c
 	exit(EXIT_FAILURE);
     }
     buffsize = tlsize * ntiles;
-    if (tlsize != (buffsize / ntiles))
+    if (ntiles != 0 && tlsize > (tmsize_t)(TIFF_TMSIZE_T_MAX / ntiles))
     {
 	TIFFError("loadImage", "Integer overflow when calculating buffer size");
 	exit(EXIT_FAILURE);
@@ -6345,7 +6345,7 @@ loadImage(TIFF* in, struct image_data *image, struct dump_opts *dump, unsigned c
     if (buffsize < (tmsize_t)(ntiles * tl * tile_rowsize))
       {
       buffsize = ntiles * tl * tile_rowsize;
-      if (ntiles != (buffsize / tl / tile_rowsize))
+      if (tl != 0 && tile_rowsize != 0 && ntiles > (TIFF_TMSIZE_T_MAX / tl / tile_rowsize))
       {
 	TIFFError("loadImage", "Integer overflow when calculating buffer size");
 	exit(EXIT_FAILURE);
@@ -6377,13 +6377,13 @@ loadImage(TIFF* in, struct image_data *image, struct dump_opts *dump, unsigned c
     }
 
     buffsize = stsize * nstrips;
-    if (stsize != (buffsize / nstrips))
+    if (nstrips != 0 && stsize > (tmsize_t)(TIFF_TMSIZE_T_MAX / nstrips))
     {
 	TIFFError("loadImage", "Integer overflow when calculating buffer size");
 	exit(EXIT_FAILURE);
     }
     buffsize_check = (((tmsize_t)length * width * spp * bps) + 7);
-    if (length != ((buffsize_check - 7) / width / spp / bps))
+    if (width != 0 && spp != 0 && bps != 0 && length > (tmsize_t)((TIFF_TMSIZE_T_MAX - 7) / width / spp / bps))
     {
 	TIFFError("loadImage", "Integer overflow detected.");
 	exit(EXIT_FAILURE);
