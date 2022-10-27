@@ -6342,13 +6342,13 @@ loadImage(TIFF* in, struct image_data *image, struct dump_opts *dump, unsigned c
     }
     buffsize = tlsize * ntiles;
 
+    if (tl != 0 && ntiles != 0 && tile_rowsize > (tmsize_t)(TIFF_TMSIZE_T_MAX / tl / ntiles))
+    {
+        TIFFError("loadImage", "Integer overflow when calculating buffer size");
+        exit(EXIT_FAILURE);
+    }
     if (buffsize < (tmsize_t)(ntiles * tl * tile_rowsize))
-      {
-      if (tl != 0 && tile_rowsize != 0 && ntiles > (TIFF_TMSIZE_T_MAX / tl / tile_rowsize))
-      {
-	TIFFError("loadImage", "Integer overflow when calculating buffer size");
-	exit(EXIT_FAILURE);
-      }
+    {
       buffsize = ntiles * tl * tile_rowsize;
       
 #ifdef DEBUG2
@@ -6356,7 +6356,7 @@ loadImage(TIFF* in, struct image_data *image, struct dump_opts *dump, unsigned c
 	        "Tilesize %"PRIu32" is too small, using ntiles * tilelength * tilerowsize %"PRIu32,
                 tlsize, buffsize);
 #endif
-      }
+    }
     
     if (dump->infile != NULL)
       dump_info (dump->infile, dump->format, "", 
