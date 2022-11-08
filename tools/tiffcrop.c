@@ -6390,7 +6390,7 @@ loadImage(TIFF* in, struct image_data *image, struct dump_opts *dump, unsigned c
      * Otherwise buffer-overflow might occur there.
      */
     if ( (spp != 0 && bps != 0 && width > (uint32_t)((UINT32_MAX - 7) / spp / bps)) ||
-         (width != 0 && length > (tmsize_t)(TIFF_TMSIZE_T_MAX / (uint32_t)(((width * spp * bps) + 7) / 8))) )
+         (width != 0 && spp != 0 && bps != 0 && length > (tmsize_t)(TIFF_TMSIZE_T_MAX / (uint32_t)(((width * spp * bps) + 7) / 8))) )
     {
 	TIFFError("loadImage", "Integer overflow detected.");
 	exit(EXIT_FAILURE);
