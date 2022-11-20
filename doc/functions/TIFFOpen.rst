@@ -81,7 +81,7 @@ will be appended when the file is closed.
 TIFF file given an open file descriptor *fd*.
 The file's name and mode must reflect that of the open descriptor.
 The object associated with the file descriptor **must support random access**.
-In order to close a TIFF file opende with :c:func:`TIFFFdOpen`
+In order to close a TIFF file opened with :c:func:`TIFFFdOpen`
 first :c:func:`TIFFCleanup` should be called to free the internal
 TIFF structure without closing the file handle and afterwards the
 file should be closed using its file descriptor *fd*.
