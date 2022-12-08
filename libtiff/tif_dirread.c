@@ -4700,7 +4700,7 @@ TIFFReadDirectoryCheckOrder(TIFF* tif, TIFFDirEntry* dir, uint16_t dircount)
 			    "Invalid TIFF directory; tags are not sorted in ascending order");
 			break;
 		}
-		m=o->tdir_tag+1;
+		m=o->tdir_tag;
 	}
 }
 
