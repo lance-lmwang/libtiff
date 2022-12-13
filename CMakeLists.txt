@@ -48,10 +48,11 @@ project(tiff
 if(NOT CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
   # libtiff is being included as a subproject of some other project.
   set(TIFF_INSTALL_DEFAULT OFF)
-  option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 else()
   set(TIFF_INSTALL_DEFAULT ON)
 endif()
+
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 
 option(tiff-tools "build TIFF tools" ON)
 option(tiff-tests "build TIFF tests" ON)
