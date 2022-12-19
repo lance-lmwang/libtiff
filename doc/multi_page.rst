@@ -11,10 +11,10 @@ Such files are also named "*multi-page* TIFF" or "*multi-image* TIFF".
 
 There are two mechanisms for storing multiple images in a TIFF file:
 
-1.  A **main IFD chain**, where the images are stored in linked IFDs (directories).
+1.  A **main-IFD chain**, where the images are stored in linked IFDs (directories).
     This mechanism is widely used.
 2.  A **SubIFD chain**, where additional images are stored within the SubIFD tag
-    of a main IFD. Such child images provide extra information for the parent image
+    of a main-IFD. Such child images provide extra information for the parent image
     - such as a subsampled version of the parent image. 
     SubIFD chains are rarely supported.
     For SubIFD refer also to
@@ -91,9 +91,13 @@ additionally, as Adobe PageMaker® 6.0 TIFF Technical Notes suggests.
 
           if (blnWriteSubIFD)
           {
-              /* Now here is the trick: the next n directories written
-              * will be sub-IFDs of the main IFD (where n is number_of_sub_IFDs
+             /* Now here is the trick: the next n directories written
+              * will be sub-IFDs of the main-IFD (where n is number_of_sub_IFDs
               * specified when you set the TIFFTAG_SUBIFD field.
+              * The SubIFD offset array sub_IFDs_offsets is filled automatically
+              * with the proper offset values by the following number_of_sub_IFDs
+              * TIFFWriteDirectory() calls and updated in the related main-IFD
+              * with the last call.
               */
               if (!TIFFSetField(tiff, TIFFTAG_SUBIFD, number_of_sub_IFDs,
                                 sub_IFDs_offsets))
@@ -109,12 +113,13 @@ additionally, as Adobe PageMaker® 6.0 TIFF Technical Notes suggests.
 
           if (blnWriteSubIFD)
           {
-              /* For this multi-page image, SubIFD tag was written and this
-              * triggers the last TIFFWriteDirectory() to switch to the
-              * SubIFD-chain for next writings. The SubIFD offset array is filled
-              * automatically with the right offset values by
-              * TIFFWriteDirectory(). Thus, only the thumbnail image needs to be
+             /* A SubIFD tag has been written for that main-IFD and this
+              * triggers that pervious TIFFWriteDirectory() to switch to the
+              * SubIFD-chain for the next number_of_sub_IFDs writings.
+              * Thus, only the thumbnail images need to be
               * set up and written to file using TIFFWriteDirectory().
+              * The last of this TIFFWriteDirectory() calls will setup
+              * the next fresh main-IFD.
               */
               for (int i = 0; i < number_of_sub_IFDs; i++)
               {
