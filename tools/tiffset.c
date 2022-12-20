@@ -407,14 +407,19 @@ int main(int argc, char *argv[])
                 continue;
             }
 
-            text = (char *)malloc(1000000);
+            /* Get file size and enlarge it for some space in buffer */
+            fseek(fp, 0L, SEEK_END);
+            long fsize = ftell(fp) + 2;
+            rewind(fp);
+
+            text = (char *)malloc(fsize);
             if (text == NULL)
             {
                 fprintf(stderr, "Memory allocation error\n");
                 fclose(fp);
                 continue;
             }
-            len = fread(text, 1, 999999, fp);
+            len = fread(text, 1, fsize - 1, fp);
             text[len] = '\0';
 
             fclose(fp);
