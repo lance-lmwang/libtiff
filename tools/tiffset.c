@@ -459,7 +459,8 @@ int main(int argc, char *argv[])
             fsize = (tmsize_t)TIFFftell(fp) + 1;
             rewind(fp);
 
-            if (fsize > 0xFFFFFFFFUL) /* MAXUINT32 = 0xFFFFFFFFUL */
+            if (fsize > 0xFFFFFFFFUL || /* MAXUINT32 = 0xFFFFFFFFUL */
+                fsize <= 0)
             {
                 fprintf(
                     stderr,
