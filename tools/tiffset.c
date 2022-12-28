@@ -46,19 +46,21 @@
 #define EXIT_FAILURE 1
 #endif
 
-#if !defined(Windows95) && !defined(__BORLANDC__) &&                           \
-    !(defined(_MSC_VER) && _MSC_VER < 1400) &&                                 \
-    !(defined(__MSVCRT_VERSION__) && __MSVCRT_VERSION__ < 0x800)
-
 /*
-  Windows '95 and Borland C do not support _lseeki64
   Visual Studio does not support _fseeki64 and _ftelli64 until the 2005 release.
   Without these interfaces, files over 2GB in size are not supported for
   Windows.
+  For MinGW, __MSVCRT_VERSION__ must be at least 0x800 to expose these
+  interfaces. The MinGW compiler must support the requested version.  MinGW
+  does not distribute the CRT (it is supplied by Microsoft) so the correct CRT
+  must be available on the target computer in order for the program to run.
 */
+#if defined(__WIN32__) && !(defined(_MSC_VER) && _MSC_VER < 1400) &&           \
+    !(defined(__MSVCRT_VERSION__) && __MSVCRT_VERSION__ < 0x800)
 #define TIFFfseek(stream, offset, whence)                                      \
     _fseeki64(stream, /* __int64 */ offset, whence)
 #define TIFFftell(stream) /* __int64 */ _ftelli64(stream)
+#pragma message("...... _fseeki64 defined ....")
 #else
 #define TIFFfseek(stream, offset, whence) fseek(stream, offset, whence)
 #define TIFFftell(stream) ftell(stream)
