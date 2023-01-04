@@ -149,9 +149,15 @@ int count_directories(const char *filename, int *count)
     return 0;
 }
 
+enum DirWalkMode
+{
+    DirWalkMode_ReadDirectory,
+    DirWalkMode_SetDirectory,
+    DirWalkMode_SetDirectory_Reverse,
+};
 /* Gets a list of the directory offsets in a file. Assumes the file has at least
  * N_DIRECTORIES directories */
-int get_dir_offsets(const char *filename, uint64_t *offsets)
+int get_dir_offsets(const char *filename, uint64_t *offsets, enum DirWalkMode dirWalkMode)
 {
     TIFF *tif;
     int i;
@@ -165,8 +171,19 @@ int get_dir_offsets(const char *filename, uint64_t *offsets)
 
     for (i = 0; i < N_DIRECTORIES; i++)
     {
-        offsets[i] = TIFFCurrentDirOffset(tif);
-        if (!TIFFReadDirectory(tif) && i < (N_DIRECTORIES - 1))
+        tdir_t dirn = (dirWalkMode == DirWalkMode_SetDirectory_Reverse) ? (N_DIRECTORIES - i - 1) : i;
+
+        if (dirWalkMode != DirWalkMode_ReadDirectory && !TIFFSetDirectory(tif, dirn) && dirn < (N_DIRECTORIES  -1))
+        {
+            fprintf(stderr, "Can't set %d.th directory from %s\n", i,
+                    filename);
+            TIFFClose(tif);
+            return 3;
+        }
+
+        offsets[dirn] = TIFFCurrentDirOffset(tif);
+
+        if (dirWalkMode == DirWalkMode_ReadDirectory && !TIFFReadDirectory(tif) && i < (N_DIRECTORIES - 1))
         {
             fprintf(stderr, "Can't read %d.th directory from %s\n", i,
                     filename);
@@ -270,8 +287,8 @@ int test_lastdir_offset(bool is_big_tiff)
     const char *filename_optimized = "test_directory_optimized.tif";
     const char *filename_non_optimized = "test_directory_non_optimized.tif";
     int i, count_optimized, count_non_optimized;
-    uint64_t offsets_optimized[N_DIRECTORIES];
-    uint64_t offsets_non_optimized[N_DIRECTORIES];
+    uint64_t offsets_base[N_DIRECTORIES];
+    uint64_t offsets_comparison[N_DIRECTORIES];
     TIFF *tif;
 
     /* First file: open it and add multiple directories. This uses the lastdir
@@ -343,27 +360,35 @@ int test_lastdir_offset(bool is_big_tiff)
     }
 
     /* Check that both files have the same directory offsets */
-    if (get_dir_offsets(filename_optimized, offsets_optimized))
+    if (get_dir_offsets(filename_optimized, offsets_base, DirWalkMode_ReadDirectory))
     {
         fprintf(stderr, "Error reading directory offsets from %s.\n",
                 filename_optimized);
         goto failure;
     }
-    if (get_dir_offsets(filename_non_optimized, offsets_non_optimized))
+    for (int file_i = 0; file_i < 2; ++file_i)
     {
-        fprintf(stderr, "Error reading directory offsets from %s.\n",
-                filename_non_optimized);
-        goto failure;
-    }
-    for (i = 0; i < N_DIRECTORIES; i++)
-    {
-        if (offsets_optimized[i] != offsets_non_optimized[i])
+        const char *filename = (file_i == 0) ? filename_optimized : filename_non_optimized;
+
+        for (enum DirWalkMode mode = DirWalkMode_ReadDirectory; mode <= DirWalkMode_SetDirectory_Reverse; ++mode)
         {
-            fprintf(stderr,
-                    "Unexpected directory offset for directory %i, expected "
-                    "offset %" PRIu64 " but got %" PRIu64 ".\n",
-                    i, offsets_non_optimized[i], offsets_optimized[i]);
-            goto failure;
+            if (get_dir_offsets(filename, offsets_comparison, mode))
+            {
+                fprintf(stderr, "Error reading directory offsets from %s in mode %d.\n",
+                        filename, mode);
+                goto failure;
+            }
+            for (i = 0; i < N_DIRECTORIES; i++)
+            {
+                if (offsets_base[i] != offsets_comparison[i])
+                {
+                    fprintf(stderr,
+                            "Unexpected directory offset for directory %i, expected "
+                            "offset %" PRIu64 " but got %" PRIu64 ".\n",
+                            i, offsets_base[i], offsets_comparison[i]);
+                    goto failure;
+                }
+            }
         }
     }
 
