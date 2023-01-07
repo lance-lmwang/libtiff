@@ -41,7 +41,7 @@ dnl Versioning.
 dnl Don't fill the ALPHA_VERSION field, if not applicable.
 LIBTIFF_MAJOR_VERSION=4
 LIBTIFF_MINOR_VERSION=5
-LIBTIFF_MICRO_VERSION=0
+LIBTIFF_MICRO_VERSION=1
 LIBTIFF_ALPHA_VERSION=
 LIBTIFF_VERSION=$LIBTIFF_MAJOR_VERSION.$LIBTIFF_MINOR_VERSION.$LIBTIFF_MICRO_VERSION$LIBTIFF_ALPHA_VERSION
 dnl This will be used with the 'make release' target
@@ -1227,6 +1227,7 @@ AC_CONFIG_FILES([Makefile \
 		 libtiff/Makefile \
 		 port/Makefile \
 		 test/Makefile \
+		 libtiff/tiffvers.h \
 		 tools/Makefile])
 AC_OUTPUT
 
