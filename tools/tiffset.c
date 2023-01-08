@@ -429,7 +429,7 @@ int main(int argc, char *argv[])
             char *text;
             size_t len;
             int ret;
-            tmsize_t fsize;
+            int64_t fsize;
 
             arg_index++;
             fip = GetField(tiff, argv[arg_index]);
@@ -458,10 +458,12 @@ int main(int argc, char *argv[])
              * Maximum ASCII tag size is limited by uint32_t count.
              */
             TIFFfseek(fp, 0L, SEEK_END);
-            fsize = (tmsize_t)TIFFftell(fp) + 1;
+            fsize = TIFFftell(fp) + 1;
             rewind(fp);
 
             if (fsize > 0xFFFFFFFFUL || /* MAXUINT32 = 0xFFFFFFFFUL */
+                fsize >
+                    TIFF_TMSIZE_T_MAX || /* for x32 tmsize_t is only int32_t */
                 fsize <= 0)
             {
                 fprintf(
@@ -471,14 +473,14 @@ int main(int argc, char *argv[])
                 fclose(fp);
                 continue;
             }
-            text = (char *)limitMalloc(fsize);
+            text = (char *)limitMalloc((tmsize_t)fsize);
             if (text == NULL)
             {
                 fprintf(stderr, "Memory allocation error\n");
                 fclose(fp);
                 continue;
             }
-            len = fread(text, 1, fsize - 1, fp);
+            len = fread(text, 1, (size_t)(fsize - 1), fp);
             text[len] = '\0';
 
             fclose(fp);
