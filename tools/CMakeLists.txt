@@ -23,7 +23,7 @@
 # OF THIS SOFTWARE.
 
 # MSVC specific resource preparation
-if ((MSVC OR MINGW))
+if (MSVC OR MINGW)
   message(STATUS "Include resource version information for TOOLS ")
   set(MSVC_RESSOURCE_FILE tif_tools_versioninfo.rc)
   source_group("Resource Files" FILES tif_tools_versioninfo.rc)

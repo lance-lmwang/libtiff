@@ -9,7 +9,6 @@
 #include "tiffvers.h"
 #include "tif_config.h"
 
-//#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
 #ifdef _WIN32
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 #pragma code_page(1252)
@@ -32,7 +31,7 @@ BEGIN
     BEGIN
         BLOCK "000004b0"
         BEGIN
-            VALUE "CompanyName", "--"
+            VALUE "CompanyName", "libtiff project"
             VALUE "FileDescription", "TIFF Library"
             VALUE "FileVersion", PACKAGE_VERSION
             VALUE "InternalName", "tiff.dll"
@@ -40,7 +39,7 @@ BEGIN
             VALUE "OriginalFilename", "tiff.dll"
             VALUE "ProductName", "LibTIFF"
             VALUE "ProductVersion", PACKAGE_VERSION
-            VALUE "WebPage", "http://www.simplesystems.org/libtiff/\0"
+            VALUE "WebPage", "https://libtiff.gitlab.io/libtiff/\0"
        END
     END
     BLOCK "VarFileInfo"
