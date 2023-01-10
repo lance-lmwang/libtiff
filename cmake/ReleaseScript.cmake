@@ -30,11 +30,11 @@ message(STATUS "Setting release date to ${LIBTIFF_RELEASE_DATE}")
 
 # Only needed here, for manual build of tiff_release
 # because otherwise generated when building all targets.
-configure_file(${CMAKE_BASIC_SOURCE_DIR}/libtiff/tiffvers.h.cmake.in
-               ${CMAKE_BASIC_BINARY_DIR}/libtiff/tiffvers.h
+configure_file(${LIBTIFF_BASIC_SOURCE_DIR}/libtiff/tiffvers.h.cmake.in
+               ${LIBTIFF_BASIC_BINARY_DIR}/libtiff/tiffvers.h
                @ONLY)
 
 # Write versioninfo and release date to root files when configure.ac has been updated.
-FILE(WRITE ${CMAKE_BASIC_SOURCE_DIR}/VERSION "${LIBTIFF_VERSION}" \n) 
-FILE(WRITE ${CMAKE_BASIC_SOURCE_DIR}/RELEASE-DATE "${LIBTIFF_RELEASE_DATE}" \n)
+FILE(WRITE ${LIBTIFF_BASIC_SOURCE_DIR}/VERSION "${LIBTIFF_VERSION}" \n) 
+FILE(WRITE ${LIBTIFF_BASIC_SOURCE_DIR}/RELEASE-DATE "${LIBTIFF_RELEASE_DATE}" \n)
 
