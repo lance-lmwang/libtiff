@@ -109,7 +109,7 @@ target_include_directories(tiff
 )
 
 # MSVC specific resource preparation
-if (MSVC OR MINGW)
+if (WIN32 AND MSVC)
   message(STATUS "Include resource version information for LibTIFF ")
   target_sources(tiff PRIVATE tif_win32_versioninfo.rc)
   source_group("Resource Files" FILES tif_win32_versioninfo.rc)
