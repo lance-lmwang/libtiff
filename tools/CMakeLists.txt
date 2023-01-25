@@ -24,7 +24,7 @@
 
 # MSVC specific resource preparation
 if (WIN32 AND MSVC)
-  message(STATUS "Include resource version information for TOOLS ")
+  message(STATUS "Include resource version information for TOOLS")
   set(MSVC_RESSOURCE_FILE tif_tools_versioninfo.rc)
   source_group("Resource Files" FILES tif_tools_versioninfo.rc)
 endif ()
