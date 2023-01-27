@@ -36,6 +36,141 @@
 
 #include "tiffio.h"
 
+int is_requested_directory(TIFF *tif, int requested_dir_number,
+                           const char *filename)
+{
+    char *ptr;
+    char auxString[512];
+
+    if (!TIFFGetField(tif, TIFFTAG_PAGENAME, &ptr))
+    {
+        fprintf(stderr, "Can't get TIFFTAG_PAGENAME tag.\n");
+        return 0;
+    }
+    /* Retrieve directory number from ASCII string */
+    int nthIFD;
+    int nread = sscanf(ptr, "%d %s", &nthIFD, auxString);
+    /* Check for reading errors */
+    int isnotifdstring = strcmp(auxString, "th.");
+    if (nread != 2 || isnotifdstring)
+    {
+        fprintf(stderr,
+                "Error reading IFD directory number from PageName tag: %s\n",
+                ptr);
+        return 0;
+    }
+
+    if (nthIFD == requested_dir_number)
+    {
+        return 1;
+    }
+    fprintf(stderr, "Expected directory %d from %s was not loaded but: %s\n",
+            requested_dir_number, filename, ptr);
+
+    return 0;
+}
+
+/* Test loop detection within chained SubIFDs.
+ * test_ifd_loop_subifd.tif contains seven main-IFDs (0 to 6) and within IFD 1
+ * there are three SubIFDs (0 to 2). Main IFD 4 loops back to main IFD 2.
+ * SubIFD 2 loops back to SubIFD 1.
+ * Within each IFD the tag PageName is filled with a string, indicating the
+ * IFD.*/
+int test_subifd_loop(void)
+{
+    const char *filename = SOURCE_DIR "/images/test_ifd_loop_subifd.tif";
+    TIFF *tif;
+    int i, n;
+    int ret = 0;
+#define NUMBER_OF_SUBIFDs 3
+    toff_t sub_IFDs_offsets[NUMBER_OF_SUBIFDs] = {
+        0UL}; /* array for SubIFD tag */
+    void *ptr;
+    uint16_t number_of_sub_IFDs = 0;
+
+    tif = TIFFOpen(filename, "r");
+    if (!tif)
+    {
+        fprintf(stderr, "Can't open  %s\n", filename);
+        return 1;
+    }
+
+    /* Try to read six further main directories. Fifth read shall fail. */
+    for (i = 0; i < 6; i++)
+    {
+        if (!TIFFReadDirectory(tif))
+            break;
+    }
+    if (i != 4)
+    {
+        fprintf(stderr, "(10) Expected fifth TIFFReadDirectory() to fail\n");
+        ret = 1;
+    }
+    if (!is_requested_directory(tif, 4, filename))
+    {
+        fprintf(stderr, "(11) Expected fifth main IFD to be loaded\n");
+        ret = 1;
+    }
+
+    /* Switch to IFD 1 and get SubIFDs.
+     * Then read through SubIFDs and detect SubIFD loop.
+     * Finally go back to main-IFD and check if right IFD is loaded.
+     */
+    if (!TIFFSetDirectory(tif, 1))
+        ret = 1;
+
+    /* Check if there are SubIFD subfiles */
+    if (TIFFGetField(tif, TIFFTAG_SUBIFD, &number_of_sub_IFDs, &ptr) &&
+        (number_of_sub_IFDs == 3))
+    {
+        /* Copy SubIFD array from pointer */
+        memcpy(sub_IFDs_offsets, ptr,
+               number_of_sub_IFDs * sizeof(sub_IFDs_offsets[0]));
+
+        for (i = 0; i < number_of_sub_IFDs; i++)
+        {
+            /* Read SubIFD directory directly via offset. */
+            if (!TIFFSetSubDirectory(tif, sub_IFDs_offsets[i]))
+                ret = 1;
+            if (!is_requested_directory(tif, 200 + i, filename))
+            {
+                fprintf(stderr, "(13) Expected SubIFD %d to be loaded.\n", i);
+                ret = 1;
+            }
+            /* Now test SubIFD loop detection.
+             * The (i+n).th read in the SubIFD chain shall fail. */
+            for (n = 0; n < number_of_sub_IFDs; n++)
+            {
+                if (!TIFFReadDirectory(tif))
+                    break;
+            }
+            if ((i + n) != 2)
+            {
+                fprintf(
+                    stderr,
+                    "(14) Expected third SubIFD-TIFFReadDirectory() to fail\n");
+                ret = 1;
+            }
+        }
+        /* Go back to main-IFD chain and re-read that main-IFD directory */
+        if (!TIFFSetDirectory(tif, 3))
+            ret = 1;
+        if (!is_requested_directory(tif, 3, filename))
+        {
+            fprintf(stderr, "(15) Expected fourth main IFD to be loaded\n");
+            ret = 1;
+        }
+    }
+    else
+    {
+        fprintf(stderr, "(12) No or wrong expected SubIFDs within main IFD\n");
+        ret = 1;
+    }
+
+    TIFFClose(tif);
+    return ret;
+} /*-- test_subifd_loop() --*/
+
 int main()
 {
     int ret = 0;
@@ -175,5 +310,6 @@ int main()
         }
         TIFFClose(tif);
     }
+    ret = ret + test_subifd_loop();
     return ret;
 }
