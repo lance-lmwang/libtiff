@@ -310,6 +310,6 @@ int main()
         }
         TIFFClose(tif);
     }
-    ret = ret + test_subifd_loop();
+    ret += test_subifd_loop();
     return ret;
 }
