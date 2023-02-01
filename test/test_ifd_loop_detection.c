@@ -40,7 +40,6 @@ int is_requested_directory(TIFF *tif, int requested_dir_number,
                            const char *filename)
 {
     char *ptr;
-    char auxString[512];
 
     if (!TIFFGetField(tif, TIFFTAG_PAGENAME, &ptr))
     {
@@ -48,11 +47,12 @@ int is_requested_directory(TIFF *tif, int requested_dir_number,
         return 0;
     }
     /* Retrieve directory number from ASCII string */
+    char *auxStr = strchr(ptr, ' ');
     int nthIFD;
-    int nread = sscanf(ptr, "%d %s", &nthIFD, auxString);
+    nthIFD = atoi(ptr);
+
     /* Check for reading errors */
-    int isnotifdstring = strcmp(auxString, "th.");
-    if (nread != 2 || isnotifdstring)
+    if (strncmp(auxStr, " th.", 4))
     {
         fprintf(stderr,
                 "Error reading IFD directory number from PageName tag: %s\n",
@@ -75,7 +75,7 @@ int is_requested_directory(TIFF *tif, int requested_dir_number,
  * there are three SubIFDs (0 to 2). Main IFD 4 loops back to main IFD 2.
  * SubIFD 2 loops back to SubIFD 1.
  * Within each IFD the tag PageName is filled with a string, indicating the
- * IFD.*/
+ * IFD. The main IFDs are numbered 0 to 6 and the SubIFDs 200 to 202. */
 int test_subifd_loop(void)
 {
     const char *filename = SOURCE_DIR "/images/test_ifd_loop_subifd.tif";
@@ -103,12 +103,12 @@ int test_subifd_loop(void)
     }
     if (i != 4)
     {
-        fprintf(stderr, "(10) Expected fifth TIFFReadDirectory() to fail\n");
+        fprintf(stderr, "(20) Expected fifth TIFFReadDirectory() to fail\n");
         ret = 1;
     }
     if (!is_requested_directory(tif, 4, filename))
     {
-        fprintf(stderr, "(11) Expected fifth main IFD to be loaded\n");
+        fprintf(stderr, "(21) Expected fifth main IFD to be loaded\n");
         ret = 1;
     }
 
@@ -129,12 +129,13 @@ int test_subifd_loop(void)
 
         for (i = 0; i < number_of_sub_IFDs; i++)
         {
-            /* Read SubIFD directory directly via offset. */
+            /* Read SubIFD directory directly via offset.
+             * SubIFDs PageName string contains numbers 200 to 202. */
             if (!TIFFSetSubDirectory(tif, sub_IFDs_offsets[i]))
                 ret = 1;
             if (!is_requested_directory(tif, 200 + i, filename))
             {
-                fprintf(stderr, "(13) Expected SubIFD %d to be loaded.\n", i);
+                fprintf(stderr, "(22) Expected SubIFD %d to be loaded.\n", i);
                 ret = 1;
             }
             /* Now test SubIFD loop detection.
@@ -148,7 +149,7 @@ int test_subifd_loop(void)
             {
                 fprintf(
                     stderr,
-                    "(14) Expected third SubIFD-TIFFReadDirectory() to fail\n");
+                    "(23) Expected third SubIFD-TIFFReadDirectory() to fail\n");
                 ret = 1;
             }
         }
@@ -157,13 +158,13 @@ int test_subifd_loop(void)
             ret = 1;
         if (!is_requested_directory(tif, 3, filename))
         {
-            fprintf(stderr, "(15) Expected fourth main IFD to be loaded\n");
+            fprintf(stderr, "(24) Expected fourth main IFD to be loaded\n");
             ret = 1;
         }
     }
     else
     {
-        fprintf(stderr, "(12) No or wrong expected SubIFDs within main IFD\n");
+        fprintf(stderr, "(25) No or wrong expected SubIFDs within main IFD\n");
         ret = 1;
     }
 
