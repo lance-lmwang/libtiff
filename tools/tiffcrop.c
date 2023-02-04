@@ -7384,7 +7384,8 @@ static int extractCompositeRegions(struct image_data *image,
             default:
             case EDGE_TOP:
             case EDGE_BOTTOM:
-                if ((i > 0) && (crop_width != crop->regionlist[i - 1].width))
+                if ((crop->selections > i + 1) &&
+                    (crop_width != crop->regionlist[i + 1].width))
                 {
                     TIFFError("extractCompositeRegions",
                               "Only equal width regions can be combined for -E "
@@ -7477,8 +7478,6 @@ static int extractCompositeRegions(struct image_data *image,
             case EDGE_LEFT: /* splice the pieces of each row together, side by
                                side */
             case EDGE_RIGHT:
-                // if ((i > 0) && (crop_length != crop->regionlist[i -
-                // 1].length))
                 if ((crop->selections > i + 1) &&
                     (crop_length != crop->regionlist[i + 1].length))
                 {
