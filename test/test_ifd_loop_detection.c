@@ -299,6 +299,31 @@ int main()
             fprintf(stderr, "(17) Expected TIFFReadDirectory() to fail\n");
             ret = 1;
         }
+        if (TIFFSetDirectory(tif, 0) != 1)
+        {
+            fprintf(stderr, "(18) Expected TIFFSetDirectory() to succeed\n");
+            ret = 1;
+        }
+        if (TIFFSetDirectory(tif, 1) != 1)
+        {
+            fprintf(stderr, "(19) Expected TIFFSetDirectory() to succeed\n");
+            ret = 1;
+        }
+        if (TIFFSetDirectory(tif, 2))
+        {
+            fprintf(stderr, "(20) Expected TIFFSetDirectory() to fail\n");
+            ret = 1;
+        }
+        if (TIFFSetDirectory(tif, 1) != 1)
+        {
+            fprintf(stderr, "(21) Expected TIFFSetDirectory() to succeed\n");
+            ret = 1;
+        }
+        if (TIFFSetDirectory(tif, 0) != 1)
+        {
+            fprintf(stderr, "(22) Expected TIFFSetDirectory() to succeed\n");
+            ret = 1;
+        }
         TIFFClose(tif);
     }
     {
