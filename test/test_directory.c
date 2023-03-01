@@ -270,14 +270,15 @@ int get_dir_offsets(const char *filename, uint64_t *offsets,
  *
  * There are several issues especially when SubIFDs and custom directories are
  * involved. There are no real directory number for those and TIFFSetDirectory()
- * cannot be used. Howerver, TIFFSetDirectory() is needed to switch back to the
+ * cannot be used. However, TIFFSetDirectory() is needed to switch back to the
  * main-IFD chain. Furthermore, IFD-loop handling needs to be supported in any
  * cases.
+ * Also the case where directly after TIFFWriteDirectory() that directory
+ * is re-read using TIFFSetDirectory() is tested.
  */
 int test_arbitrary_directrory_loading(bool is_big_tiff)
 {
     const char *filename = "test_arbitrary_directrory_loading.tif";
-    int i;
     TIFF *tif;
     uint64_t offsets_base[N_DIRECTORIES];
     int expected_original_dirnumber;
@@ -289,7 +290,8 @@ int test_arbitrary_directrory_loading(bool is_big_tiff)
         fprintf(stderr, "Can't create %s\n", filename);
         return 1;
     }
-    for (i = 0; i < N_DIRECTORIES; i++)
+    TIFFSetDirectory(tif, 0);
+    for (int i = 0; i < N_DIRECTORIES; i++)
     {
         if (write_data_to_current_directory(tif, i))
         {
@@ -301,6 +303,49 @@ int test_arbitrary_directrory_loading(bool is_big_tiff)
         {
             fprintf(stderr, "Can't write directory to %s\n", filename);
             goto failure;
+        }
+        if (i >= 2 && i <= 4)
+        {
+            if (i == 3)
+            {
+                /* Invalidate directory - TIFFSetSubDirectory() will fail */
+                if (TIFFSetSubDirectory(tif, 0))
+                {
+                    fprintf(stderr,
+                            "Unexpected return at invalidate directory %d "
+                            "within %s.\n",
+                            i, filename);
+                    goto failure;
+                }
+            }
+            /* Test jump back to just written directory. */
+            if (!TIFFSetDirectory(tif, i))
+            {
+                fprintf(stderr,
+                        "Can't set directory %d within %s  "
+                        "right after TIFFWriteDirectory().\n",
+                        i, filename);
+                goto failure;
+            }
+            if (i == 4)
+            {
+                /* Invalidate directory - TIFFSetSubDirectory() will fail */
+                if (TIFFSetSubDirectory(tif, 0))
+                {
+                    fprintf(stderr,
+                            "Unexpected return at invalidate directory %d "
+                            "within %s.\n",
+                            i, filename);
+                    goto failure;
+                }
+            }
+            /*Check if correct directory is loaded */
+            if (!is_requested_directory(tif, i, filename))
+            {
+                goto failure;
+            }
+            /* Reset to next directory to go on with writing. */
+            TIFFCreateDirectory(tif);
         }
     }
     TIFFClose(tif);
@@ -350,7 +395,7 @@ int test_arbitrary_directrory_loading(bool is_big_tiff)
         goto failure;
     }
     /* Move to the unlinked IFD. This sets tif_curdir=0 because unlinked IFD
-     * offset is not in the IFD loop list. This indicates a SubIFD chain.  */
+     * offset is not in the IFD loop list. This indicates a SubIFD chain. */
     if (!TIFFSetSubDirectory(tif, off2))
     {
         fprintf(stderr,
@@ -365,8 +410,8 @@ int test_arbitrary_directrory_loading(bool is_big_tiff)
     {
         goto failure;
     }
-    /* This should move back to the main-IFD chain and load the third directory
-     * with has IFD number 4, due to the deleted third IFD. */
+    /* This should move back to the main-IFD chain and load the third
+     * directory which has IFD number 4, due to the deleted third IFD. */
     if (!TIFFSetDirectory(tif, 3))
     {
         fprintf(stderr, "Can't set new directory %d within %s\n", 3, filename);
@@ -429,7 +474,8 @@ int test_arbitrary_directrory_loading(bool is_big_tiff)
                 offsets_base[2], offsets_base[2], filename);
         goto failure;
     }
-    /* Check if correct directory is loaded, which was unlinked the second time.
+    /* Check if correct directory is loaded, which was unlinked the second
+     * time.
      */
     expected_original_dirnumber = 3;
     if (!is_requested_directory(tif, expected_original_dirnumber, filename))
@@ -437,9 +483,9 @@ int test_arbitrary_directrory_loading(bool is_big_tiff)
         goto failure;
     }
 
-    /* Load unlinked directory like a SubIFD and then go back to the main-IFD
-     * chain using TIFFSetDirectory(). Also check two loads of the same
-     * directory. */
+    /* Load unlinked directory like a SubIFD and then go back to the
+     * main-IFD chain using TIFFSetDirectory(). Also check two loads of the
+     * same directory. */
     if (!TIFFSetSubDirectory(tif, offsets_base[2]))
     {
         fprintf(stderr,
@@ -460,7 +506,7 @@ int test_arbitrary_directrory_loading(bool is_big_tiff)
         goto failure;
     }
     /*Check if correct directory is loaded. Because two original IFDs are
-     * Unlinked / missing, the original dirnumber is now 5. */
+     * unlinked / missing, the original dirnumber is now 5. */
     expected_original_dirnumber = 5;
     if (!is_requested_directory(tif, expected_original_dirnumber, filename))
     {
@@ -509,8 +555,8 @@ int test_arbitrary_directrory_loading(bool is_big_tiff)
 
     /* Third UnlinkDirectory -> three IFDs are missing in the main-IFD chain
      * then, orignal dirnum 0, 2 and 3
-     * Furthermore, this test checks that TIFFUnlinkDirectory() can unlink the
-     * first directory dirnum = 0 and a following TIFFSetDirectory(0)
+     * Furthermore, this test checks that TIFFUnlinkDirectory() can unlink
+     * the first directory dirnum = 0 and a following TIFFSetDirectory(0)
      * does not load the unlinked directory. */
     if (!TIFFUnlinkDirectory(tif, 1))
     {
@@ -563,20 +609,20 @@ failure:
     if (tif)
     {
         TIFFClose(tif);
-        tif = NULL;
     }
     unlink(filename);
     return 1;
 }
 
-/* Checks that rewriting a directory does not break the directory linked list
+/* Checks that rewriting a directory does not break the directory linked
+ * list
  *
- * This could happen because TIFFRewriteDirectory relies on the traversal of the
- * directory linked list in order to move the rewritten directory to the end of
- * the file. This means the `lastdir_offset` optimization should be skipped,
- * otherwise the linked list will be broken at the point where it connected to
- * the rewritten directory, resulting in the loss of the directories that come
- * after it.
+ * This could happen because TIFFRewriteDirectory relies on the traversal of
+ * the directory linked list in order to move the rewritten directory to the
+ * end of the file. This means the `lastdir_offset` optimization should be
+ * skipped, otherwise the linked list will be broken at the point where it
+ * connected to the rewritten directory, resulting in the loss of the
+ * directories that come after it.
  */
 int test_rewrite_lastdir_offset(bool is_big_tiff)
 {
@@ -640,10 +686,10 @@ int test_rewrite_lastdir_offset(bool is_big_tiff)
     }
     if (count != N_DIRECTORIES)
     {
-        fprintf(
-            stderr,
-            "Unexpected number of directories in %s. Expected %i, found %i.\n",
-            filename, N_DIRECTORIES, count);
+        fprintf(stderr,
+                "Unexpected number of directories in %s. Expected %i, "
+                "found %i.\n",
+                filename, N_DIRECTORIES, count);
         goto failure;
     }
 
@@ -654,7 +700,6 @@ failure:
     if (tif)
     {
         TIFFClose(tif);
-        tif = NULL;
     }
     unlink(filename);
     return 1;
@@ -671,8 +716,8 @@ int test_lastdir_offset(bool is_big_tiff)
     uint64_t offsets_comparison[N_DIRECTORIES];
     TIFF *tif;
 
-    /* First file: open it and add multiple directories. This uses the lastdir
-     * optimization. */
+    /* First file: open it and add multiple directories. This uses the
+     * lastdir optimization. */
     tif = TIFFOpen(filename_optimized, is_big_tiff ? "w8" : "w");
     if (!tif)
     {
@@ -719,10 +764,10 @@ int test_lastdir_offset(bool is_big_tiff)
     }
     if (count_optimized != N_DIRECTORIES)
     {
-        fprintf(
-            stderr,
-            "Unexpected number of directories in %s. Expected %i, found %i.\n",
-            filename_optimized, N_DIRECTORIES, count_optimized);
+        fprintf(stderr,
+                "Unexpected number of directories in %s. Expected %i, "
+                "found %i.\n",
+                filename_optimized, N_DIRECTORIES, count_optimized);
         goto failure;
     }
     if (count_directories(filename_non_optimized, &count_non_optimized))
@@ -733,10 +778,10 @@ int test_lastdir_offset(bool is_big_tiff)
     }
     if (count_non_optimized != N_DIRECTORIES)
     {
-        fprintf(
-            stderr,
-            "Unexpected number of directories in %s. Expected %i, found %i.\n",
-            filename_non_optimized, N_DIRECTORIES, count_non_optimized);
+        fprintf(stderr,
+                "Unexpected number of directories in %s. Expected %i, "
+                "found %i.\n",
+                filename_non_optimized, N_DIRECTORIES, count_non_optimized);
         goto failure;
     }
 
@@ -791,7 +836,6 @@ failure:
     if (tif)
     {
         TIFFClose(tif);
-        tif = NULL;
     }
     unlink(filename_optimized);
     unlink(filename_non_optimized);

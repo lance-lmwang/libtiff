@@ -1702,9 +1702,10 @@ int TIFFCreateCustomDirectory(TIFF *tif, const TIFFFieldArray *infoarray)
     tif->tif_curoff = 0;
     tif->tif_row = (uint32_t)-1;
     tif->tif_curstrip = (uint32_t)-1;
-    tif->tif_curdir =
-        TIFF_NON_EXISTENT_DIR_NUMBER;        /* invalidate directory index */
-    _TIFFCleanupIFDOffsetAndNumberMaps(tif); /* invalidate IFD loop lists */
+    /* invalidate directory index */
+    tif->tif_curdir = TIFF_NON_EXISTENT_DIR_NUMBER;
+    /* invalidate IFD loop lists */
+    _TIFFCleanupIFDOffsetAndNumberMaps(tif);
     /* To be able to return from SubIFD or custom-IFD to main-IFD */
     tif->tif_setdirectory_force_absolute = TRUE;
 
@@ -2030,9 +2031,13 @@ int TIFFSetDirectory(TIFF *tif, tdir_t dirn)
     tdir_t nextdirnum = 0;
     tdir_t n;
     /* Fast path when we just advance relative to the current directory:
-     * start at the current dir offset and continue to seek from there. */
-    const int relative =
-        (dirn >= tif->tif_curdir) && !tif->tif_setdirectory_force_absolute;
+     * start at the current dir offset and continue to seek from there.
+     * Check special cases when relative is not allowed:
+     * - jump back from SubIFD or custom directory
+     * - right after TIFFWriteDirectory() jump back to that directory
+     *   using TIFFSetDirectory() */
+    const int relative = (dirn >= tif->tif_curdir) && (tif->tif_diroff != 0) &&
+                         !tif->tif_setdirectory_force_absolute;
 
     if (relative)
     {
