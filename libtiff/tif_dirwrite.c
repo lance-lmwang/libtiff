@@ -320,6 +320,7 @@ int TIFFRewriteDirectory(TIFF *tif)
      * Find and zero the pointer to this directory, so that TIFFLinkDirectory
      * will cause it to be added after this directories current pre-link.
      */
+    uint64_t torewritediroff = tif->tif_diroff;
 
     if (!(tif->tif_flags & TIFF_BIGTIFF))
     {
@@ -385,6 +386,14 @@ int TIFFRewriteDirectory(TIFF *tif)
                     break;
                 }
                 nextdir = nextnextdir;
+            }
+            /* Remove skipped offset from IFD loop directory list. */
+            if (!_TIFFRemoveEntryFromDirectoryListByOffset(tif,
+                                                           torewritediroff))
+            {
+                TIFFErrorExtR(
+                    tif, module,
+                    "Error removing directory from IFD loop directory list");
             }
         }
     }
@@ -455,6 +464,13 @@ int TIFFRewriteDirectory(TIFF *tif)
                 }
                 nextdir = nextnextdir;
             }
+        }
+        /* Remove skipped offset from IFD loop directory list. */
+        if (!_TIFFRemoveEntryFromDirectoryListByOffset(tif, torewritediroff))
+        {
+            TIFFErrorExtR(
+                tif, module,
+                "Error removing directory from IFD loop directory list");
         }
     }
 
