@@ -537,8 +537,8 @@ static int computeOutputPixelOffsets(struct crop_mask *, struct image_data *,
                                      struct pagedef *, struct pageseg *,
                                      struct dump_opts *);
 static int loadImage(TIFF *, struct image_data *, struct dump_opts *,
-                     unsigned char **);
-static int correct_orientation(struct image_data *, unsigned char **);
+                     unsigned char **, size_t *);
+static int correct_orientation(struct image_data *, unsigned char **, size_t *);
 static int getCropOffsets(struct image_data *, struct crop_mask *,
                           struct dump_opts *);
 static int processCropSelections(struct image_data *, struct crop_mask *,
@@ -551,17 +551,17 @@ static int writeSelections(TIFF *, TIFF **, struct crop_mask *,
 /* Section functions */
 static int createImageSection(uint32_t, unsigned char **);
 static int extractImageSection(struct image_data *, struct pageseg *,
-                               unsigned char *, unsigned char *);
+                               unsigned char *, size_t, unsigned char *);
 static int writeSingleSection(TIFF *, TIFF *, struct image_data *,
                               struct dump_opts *, uint32_t, uint32_t, double,
                               double, unsigned char *);
 static int writeImageSections(TIFF *, TIFF *, struct image_data *,
                               struct pagedef *, struct pageseg *,
                               struct dump_opts *, unsigned char *,
-                              unsigned char **);
+                              size_t, unsigned char **);
 /* Whole image functions */
 static int createCroppedImage(struct image_data *, struct crop_mask *,
-                              unsigned char **, unsigned char **);
+                              unsigned char **, unsigned char **, size_t *);
 static int writeCroppedImage(TIFF *, TIFF *, struct image_data *image,
                              struct dump_opts *dump, uint32_t, uint32_t,
                              unsigned char *, int, int);
@@ -2625,6 +2625,7 @@ int main(int argc, char *argv[])
     unsigned int end_of_input = FALSE;
     int seg;
     size_t length;
+    size_t read_size;
     char temp_filename[PATH_MAX + 16]; /* Extra space keeps the compiler from
                                           complaining */
 
@@ -2779,7 +2780,7 @@ int main(int argc, char *argv[])
                 TIFFError("main", "Reading image %4d of %4d total pages.",
                           dirnum + 1, total_pages);
 
-            if (loadImage(in, &image, &dump, &read_buff))
+            if (loadImage(in, &image, &dump, &read_buff, &read_size))
             {
                 TIFFError("main", "Unable to load source image");
                 exit(EXIT_FAILURE);
@@ -2789,7 +2790,7 @@ int main(int argc, char *argv[])
              */
             if (image.adjustments != 0)
             {
-                if (correct_orientation(&image, &read_buff))
+                if (correct_orientation(&image, &read_buff, &read_size))
                     TIFFError("main", "Unable to correct image orientation");
             }
 
@@ -2811,7 +2812,7 @@ int main(int argc, char *argv[])
             }
             else /* Single image segment without zones or regions */
             {
-                if (createCroppedImage(&image, &crop, &read_buff, &crop_buff))
+                if (createCroppedImage(&image, &crop, &read_buff, &crop_buff, &read_size))
                 {
                     TIFFError("main", "Unable to create output image");
                     exit(EXIT_FAILURE);
@@ -2866,7 +2867,7 @@ int main(int argc, char *argv[])
                     exit(EXIT_FAILURE);
 
                 if (writeImageSections(in, out, &image, &page, sections, &dump,
-                                       sect_src, &sect_buff))
+                                       sect_src, read_size, &sect_buff))
                 {
                     TIFFError("main", "Unable to write image sections");
                     exit(EXIT_FAILURE);
@@ -6755,7 +6756,7 @@ static int computeOutputPixelOffsets(struct crop_mask *crop,
 } /* end computeOutputPixelOffsets */
 
 static int loadImage(TIFF *in, struct image_data *image, struct dump_opts *dump,
-                     unsigned char **read_ptr)
+                     unsigned char **read_ptr, size_t *readsize_ptr)
 {
     uint32_t i;
     float xres = 0.0, yres = 0.0;
@@ -7117,6 +7118,7 @@ static int loadImage(TIFF *in, struct image_data *image, struct dump_opts *dump,
         return (-1);
     }
 
+    *readsize_ptr = buffsize;
     read_buff[buffsize] = 0;
     read_buff[buffsize + 1] = 0;
     read_buff[buffsize + 2] = 0;
@@ -7205,7 +7207,8 @@ static int loadImage(TIFF *in, struct image_data *image, struct dump_opts *dump,
 } /* end loadImage */
 
 static int correct_orientation(struct image_data *image,
-                               unsigned char **work_buff_ptr)
+                               unsigned char **work_buff_ptr,
+                               size_t *readsize_ptr)
 {
     uint16_t mirror, rotation;
     unsigned char *work_buff;
@@ -7248,8 +7251,8 @@ static int correct_orientation(struct image_data *image,
          * but switch xres, yres there. */
         uint32_t width = image->width;
         uint32_t length = image->length;
-        if (rotateImage(rotation, image, &width, &length, work_buff_ptr, NULL,
-                        TRUE))
+        if (rotateImage(rotation, image, &width, &length,
+                        work_buff_ptr, readsize_ptr, TRUE))
         {
             TIFFError("correct_orientation", "Unable to rotate image");
             return (-1);
@@ -7699,8 +7702,8 @@ static int extractSeparateRegion(struct image_data *image,
     return (0);
 } /* end extractSeparateRegion */
 
-static int extractImageSection(struct image_data *image,
-                               struct pageseg *section, unsigned char *src_buff,
+static int extractImageSection(struct image_data *image, struct pageseg *section,
+                               unsigned char *src_buff, size_t src_buff_size,
                                unsigned char *sect_buff)
 {
     unsigned char bytebuff1, bytebuff2;
@@ -7798,16 +7801,21 @@ static int extractImageSection(struct image_data *image,
             TIFFError("", "Src offset: %8" PRIu32 ", Dst offset: %8" PRIu32,
                       src_offset, dst_offset);
 #endif
-            _TIFFmemcpy(sect_buff + dst_offset, src_buff + src_offset,
-                        full_bytes);
-            dst_offset += full_bytes;
+            if ((src_offset + full_bytes) < src_buff_size) {
+                _TIFFmemcpy(sect_buff + dst_offset, src_buff + src_offset,
+                            full_bytes);
+                dst_offset += full_bytes;
+            }
+            else
+            {
+                TIFFError("extractImageSection", "The copy size is larger than the source buffer size");
+                return (-1);
+            }
         }
     }
     else
     { /* bps != 8 */
-        shift1 =
-            ((first_col * spp * bps) %
-             8); /* shift1 = bits to skip in the first byte of source buffer*/
+        shift1 = ((first_col * spp * bps) % 8); /* shift1 = bits to skip in the first byte of source buffer*/
         for (row = first_row; row <= last_row; row++)
         {
             /* pull out the first byte */
@@ -7844,8 +7852,16 @@ static int extractImageSection(struct image_data *image,
             bytebuff1 = bytebuff2 = 0;
             if (shift1 == 0) /* the region is byte and sample aligned */
             {
-                _TIFFmemcpy(sect_buff + dst_offset, src_buff + offset1,
-                            full_bytes);
+                if ((offset1 + full_bytes) < src_buff_size)
+                {
+                    _TIFFmemcpy(sect_buff + dst_offset, src_buff + offset1,
+                                full_bytes);
+                }
+                else
+                {
+                    TIFFError("extractImageSection", "The copy size is larger than the source buffer size");
+                    return (-1);
+                }
 
 #ifdef DEVELMODE
                 TIFFError("",
@@ -8086,7 +8102,7 @@ static int writeSelections(TIFF *in, TIFF **out, struct crop_mask *crop,
 static int writeImageSections(TIFF *in, TIFF *out, struct image_data *image,
                               struct pagedef *page, struct pageseg *sections,
                               struct dump_opts *dump, unsigned char *src_buff,
-                              unsigned char **sect_buff_ptr)
+                              size_t src_buff_size, unsigned char **sect_buff_ptr)
 {
     double hres, vres;
     uint32_t i, k, width, length, sectsize;
@@ -8121,7 +8137,7 @@ static int writeImageSections(TIFF *in, TIFF *out, struct image_data *image,
         }
         sect_buff = *sect_buff_ptr;
 
-        if (extractImageSection(image, &sections[i], src_buff, sect_buff))
+        if (extractImageSection(image, &sections[i], src_buff, src_buff_size, sect_buff))
         {
             TIFFError("writeImageSections", "Unable to extract image sections");
             exit(EXIT_FAILURE);
@@ -8632,7 +8648,6 @@ static int processCropSelections(struct image_data *image,
         total_width = total_length = 0;
         for (i = 0; i < crop->selections; i++)
         {
-
             cropsize = crop->bufftotal;
             crop_buff = seg_buffs[i].buffer;
             if (!crop_buff)
@@ -8771,8 +8786,8 @@ static int processCropSelections(struct image_data *image,
  * the most optimized path when no Zones or Regions are required.
  */
 static int createCroppedImage(struct image_data *image, struct crop_mask *crop,
-                              unsigned char **read_buff_ptr,
-                              unsigned char **crop_buff_ptr)
+                              unsigned char **read_buff_ptr, unsigned char **crop_buff_ptr,
+                              size_t *readsize_ptr)
 {
     tsize_t cropsize;
     unsigned char *read_buff = NULL;
@@ -8785,7 +8800,7 @@ static int createCroppedImage(struct image_data *image, struct crop_mask *crop,
     /* Memory is freed before crop_buff_ptr is overwritten */
     if (*crop_buff_ptr != NULL)
     {
-	_TIFFfree(*crop_buff_ptr);
+        _TIFFfree(*crop_buff_ptr);
     }
 
     /* process full image, no crop buffer needed */
@@ -8891,7 +8906,7 @@ static int createCroppedImage(struct image_data *image, struct crop_mask *crop,
         CROP_ROTATE) /* rotate should be last as it can reallocate the buffer */
     {
         if (rotateImage(crop->rotation, image, &crop->combined_width,
-                        &crop->combined_length, crop_buff_ptr, NULL, TRUE))
+                        &crop->combined_length, crop_buff_ptr, readsize_ptr, TRUE))
         {
             TIFFError("createCroppedImage",
                       "Failed to rotate image or cropped selection by %" PRIu16
@@ -8901,9 +8916,8 @@ static int createCroppedImage(struct image_data *image, struct crop_mask *crop,
         }
     }
 
-    if (crop_buff ==
-        read_buff)             /* we used the read buffer for the crop buffer */
-        *read_buff_ptr = NULL; /* so we don't try to free it later */
+    if (crop_buff == read_buff)  /* we used the read buffer for the crop buffer */
+        *read_buff_ptr = NULL;   /* so we don't try to free it later */
 
     return (0);
 } /* end createCroppedImage */
