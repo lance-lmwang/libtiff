@@ -844,6 +844,8 @@ failure:
  * skipped, otherwise the linked list will be broken at the point where it
  * connected to the rewritten directory, resulting in the loss of the
  * directories that come after it.
+ * Rewriting the first directory requires an additional test, because it is
+ * treated differently from the directories that have a predecessor in the list.
  */
 int test_rewrite_lastdir_offset(bool is_big_tiff)
 {
@@ -907,6 +909,45 @@ int test_rewrite_lastdir_offset(bool is_big_tiff)
         goto failure;
     }
     uint64_t off2 = TIFFCurrentDirOffset(tif);
+    if (!is_requested_directory(tif, i, filename))
+    {
+        goto failure;
+    }
+    if (off1 == off2)
+    {
+        fprintf(stderr,
+                "Rewritten directory %d was not correctly accessed by "
+                "TIFFSetDirectory() in file %s\n",
+                i, filename);
+        goto failure;
+    }
+
+    /* Now, perform the test for the first directory */
+    TIFFSetDirectory(tif, 0);
+    if (!is_requested_directory(tif, 0, filename))
+    {
+        TIFFClose(tif);
+        return 5;
+    }
+    off1 = TIFFCurrentDirOffset(tif);
+    if (write_data_to_current_directory(tif, 0))
+    {
+        fprintf(stderr, "Can't write data to first directory in %s\n",
+                filename);
+        goto failure;
+    }
+    if (!TIFFRewriteDirectory(tif))
+    {
+        fprintf(stderr, "Can't rewrite first directory to %s\n", filename);
+        goto failure;
+    }
+    i = 0;
+    if (!TIFFSetDirectory(tif, i))
+    {
+        fprintf(stderr, "Can't set %d.th directory from %s\n", i, filename);
+        goto failure;
+    }
+    off2 = TIFFCurrentDirOffset(tif);
     if (!is_requested_directory(tif, i, filename))
     {
         goto failure;

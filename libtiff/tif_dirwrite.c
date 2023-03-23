@@ -387,14 +387,13 @@ int TIFFRewriteDirectory(TIFF *tif)
                 }
                 nextdir = nextnextdir;
             }
-            /* Remove skipped offset from IFD loop directory list. */
-            if (!_TIFFRemoveEntryFromDirectoryListByOffset(tif,
-                                                           torewritediroff))
-            {
-                TIFFErrorExtR(
-                    tif, module,
-                    "Error removing directory from IFD loop directory list");
-            }
+        }
+        /* Remove skipped offset from IFD loop directory list. */
+        if (!_TIFFRemoveEntryFromDirectoryListByOffset(tif, torewritediroff))
+        {
+            TIFFErrorExtR(
+                tif, module,
+                "Error removing directory from IFD loop directory list");
         }
     }
     else
