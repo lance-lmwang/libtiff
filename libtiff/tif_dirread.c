@@ -5565,9 +5565,14 @@ int _TIFFGetOffsetFromDirNumber(TIFF *tif, tdir_t dirn, uint64_t *diroff)
 /*
  * Remove an entry from the directory list of already seen directories
  * by directory offset.
+ * If an entry is to be removed from the list, it is also okay if the entry
+ * is not in the list or the list does not exist.
  */
 int _TIFFRemoveEntryFromDirectoryListByOffset(TIFF *tif, uint64_t diroff)
 {
+    if (tif->tif_map_dir_offset_to_number == NULL)
+        return 1;
+
     TIFFOffsetAndDirNumber entryOld;
     entryOld.offset = diroff;
     entryOld.dirNumber = 0;
@@ -5581,19 +5586,29 @@ int _TIFFRemoveEntryFromDirectoryListByOffset(TIFF *tif, uint64_t diroff)
     if (foundEntryOldOff)
     {
         entryOld.dirNumber = foundEntryOldOff->dirNumber;
-        TIFFOffsetAndDirNumber *foundEntryOldDir =
-            (TIFFOffsetAndDirNumber *)TIFFHashSetLookup(
-                tif->tif_map_dir_number_to_offset, &entryOld);
-        if (foundEntryOldDir)
+        if (tif->tif_map_dir_number_to_offset != NULL)
         {
-            TIFFHashSetRemove(tif->tif_map_dir_number_to_offset,
-                              foundEntryOldDir);
-            TIFFHashSetRemove(tif->tif_map_dir_offset_to_number,
-                              foundEntryOldOff);
-            return 1;
+            TIFFOffsetAndDirNumber *foundEntryOldDir =
+                (TIFFOffsetAndDirNumber *)TIFFHashSetLookup(
+                    tif->tif_map_dir_number_to_offset, &entryOld);
+            if (foundEntryOldDir)
+            {
+                TIFFHashSetRemove(tif->tif_map_dir_number_to_offset,
+                                  foundEntryOldDir);
+                TIFFHashSetRemove(tif->tif_map_dir_offset_to_number,
+                                  foundEntryOldOff);
+                return 1;
+            }
+        }
+        else
+        {
+            TIFFErrorExtR(tif, "_TIFFRemoveEntryFromDirectoryListByOffset",
+                          "Unexpectedly tif_map_dir_number_to_offset is "
+                          "missing but tif_map_dir_offset_to_number exists.");
+            return 0;
         }
     }
-    return 0;
+    return 1;
 } /*--- _TIFFRemoveEntryFromDirectoryListByOffset() ---*/
 
 /*
